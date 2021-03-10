@@ -86,7 +86,9 @@ class Engine(threading.Thread):
             print("using scenic")
 
             # parse scenic file
-
+            scenario = scenic.scenarioFromFile(path = self.code_file)
+            scene = scenario.generate()
+            egoObject = scene.egoObject
 
             # get ego object, run autoware
 
