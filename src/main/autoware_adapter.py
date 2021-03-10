@@ -93,8 +93,11 @@ class AutowareAdapter:
     def stop(self):
         self.send_control_message("ready to stop")
 
-        self.trace_listener.unsubscribe()
-        self.state_listener.unsubscribe()
+        try:
+            self.trace_listener.unsubscribe()
+            self.state_listener.unsubscribe()
+        except Exception as exception:
+            print(exception)
 
         self.send_control_message("stop")
         print("Stop sent")

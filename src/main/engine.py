@@ -1,13 +1,16 @@
 import os
 import threading
-from src.main import carla_adapter, autoware_adapter
+from src.main import autoware_adapter
+from src.main.scenest_carla_adapter import ScenestCarlaAdapter
+from src.main.scenic_carla_adapter import ScenicCarlaAdapter
+from src.main.carla_adapter import AdaptedVehicle
 from src.scenest_parser.ast import driver
 from src.scenest_parser.ast.ast import ASTDumper
-from src.scenest_parser.ast.error.error import IllegalTypeException
 from src.scenest_parser.ast.assertion.assertion import AgentVisibleDetectionAssertion, AgentErrorDetectionAssertion, TrafficDetectionAssertion, AgentSafetyAssertion
 from src.tools import utils
 import numpy as np
 import mtl
+import scenic
 
 class Engine(threading.Thread):
     def __init__(self, code_file, callback, map_name=None, is_load_map = False, start_event = None, stop_event = None):
@@ -32,14 +35,21 @@ class Engine(threading.Thread):
         self.start_event = start_event
         self.stop_event = stop_event
 
+        # TODO: language choose
+        # self.language = "SCENEST"
+        self.language = "SCENIC"
+
     def run(self):
         if os.environ.get("CARLA_SERVER_IP") == None:
             os.environ["CARLA_SERVER_IP"] = "127.0.0.1"
-        self.carla_adapter = carla_adapter.CarlaAdapter(
-            os.environ.get("CARLA_SERVER_IP"))
         if os.environ.get("ROS_BRIDGE_IP") == None:
             os.environ["ROS_BRIDGE_IP"] = "127.0.0.1"
         self.autoware_adapter = autoware_adapter.AutowareAdapter(os.environ.get("ROS_BRIDGE_IP"))
+
+        if self.language == "SCENEST":
+            self.carla_adapter = ScenestCarlaAdapter(os.environ.get("CARLA_SERVER_IP"))
+        if self.language == "SCENIC":
+            self.carla_adapter = ScenicCarlaAdapter(os.environ.get("CARLA_SERVER_IP"))
 
         # 前端指令切换地图
         if self.is_load_map:
@@ -54,51 +64,37 @@ class Engine(threading.Thread):
         print("caught stop event")
         self.stop()
         print("kill engine thread")
-        #utils.stop_thread(self)
 
     def start_test(self):
 
-        # 前端指令提交代码（直接提交代码没有预加载地图/已经预加载地图）
-        try:
+        if self.language == "SCENEST":
+
+            # 前端指令提交代码（直接提交代码没有预加载地图/已经预加载地图）
             self.ast = driver.Parse(self.code_file)
-        except  IllegalTypeException as typerr:
-            print (str(typerr))
-            info_msg1 = {
-                'state': 'notRunning',
-                'cmd': 'READY',
-                'msg': str(typerr)
-            }
-            self.callback(info_msg1)
-        except Exception as err:
-            print (str(err))
-            info_msg2 = {
-                'state': 'notRunning',
-                'cmd': 'READY',
-                'msg': str(err)
-            }
-            self.callback(info_msg2)
+            
+            # 如果想看一眼ast解析结果，可以取消下方注释
+            # dumper = ASTDumper(self.ast)
+            # dumper.dump()
 
-        # 如果想看一眼ast解析结果，可以取消下方注释
-        # dumper = ASTDumper(self.ast)
-        # dumper.dump()
-
-        # get scenenario
-        else:
+            # get scenenario
             scenenario_list = self.ast.get_scenarios()
             self.scenenario_list = scenenario_list
             self.scenenario_index = -1
-            self.start_next_scenenario(self.map_name)
+            self.__start_next_scenenario(self.map_name)
 
-        # without autoware
-        # __change_trace_key函数的for item in self.trace_mock: 改为 for item in self.trace:
-        # carla_adapter的id_name_map_has和id_corresponding_name去掉假数据
-        # self.on_ego_state_change("DRIVING")
-        # trace_list = self.ast.get_traces()
-        # self.check_assertion(trace_list)
-        # self.carla_adapter.destory()
-        # self.trace = []   
+        if self.language == "SCENIC":
+            print("using scenic")
 
-    def start_next_scenenario(self, map_name=None):
+            # parse scenic file
+
+
+            # get ego object, run autoware
+
+            # run carla
+            return
+
+
+    def __start_next_scenenario(self, map_name=None):
         self.scenenario_index = self.scenenario_index + 1
         if self.scenenario_index < len(self.scenenario_list):
             self.current_scenenario = self.scenenario_list[self.scenenario_index]
@@ -109,14 +105,15 @@ class Engine(threading.Thread):
                 self.carla_adapter.set_map(map_name)
 
             # Create NPCs early
-            self.carla_adapter.create_npc_vehicles(self.current_scenenario.get_npc_vehicles())
+            self.carla_adapter.init(self.current_scenenario)
 
             # Adapte ego
             ego = self.current_scenenario.get_ego_vehicle()
-            adapted_ego = carla_adapter.AdaptedVehicle(self.carla_adapter.world, ego) 
+            adapted_ego = AdaptedVehicle(self.carla_adapter.world, ego)
             # Run autoware adapter
             self.autoware_adapter.init()
             self.autoware_adapter.run(adapted_ego, self.on_ego_state_change, self.on_trace_generated)
+
         else:
             print("finish all scenenario_list")
 
@@ -124,7 +121,7 @@ class Engine(threading.Thread):
     def stop(self):
         print("Stoping engine")
         self.autoware_adapter.send_control_message("start to stop")  
-        self.carla_adapter.destory()
+        self.carla_adapter.stop()
         self.autoware_adapter.send_control_message("carla adapter destroyed")  
         self.autoware_adapter.stop()
         self.trace = []
@@ -162,17 +159,7 @@ class Engine(threading.Thread):
             self.callback(info_msg)
             self.autoware_adapter.send_control_message("start to drive")  
             # create other elements after EGO has been launched
-            if self.current_scenenario.has_npc_vehicles():
-                self.carla_adapter.run_npc_vehicles()
-            if self.current_scenenario.has_pedestrians():
-                self.carla_adapter.set_pedestrians(
-                    self.current_scenenario.get_pedestrians())
-            if self.current_scenenario.has_obstacles():
-                self.carla_adapter.set_obstacles(
-                    self.current_scenenario.get_obstacles())
-            if self.current_scenenario.has_environment():
-                self.carla_adapter.set_environment(
-                    self.current_scenenario.get_environment())
+            self.carla_adapter.run()
             self.autoware_adapter.send_control_message("others generated")  
         elif state == "STOP":
             print("Ego reached")

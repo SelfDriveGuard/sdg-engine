@@ -1,39 +1,6 @@
-import threading
-import random
 import carla
+import random
 import math
-
-# TODO: (optimize)reduce the usage of world.get_map()
-
-
-class CarlaAdapter:
-    def __init__(self, ip_address):
-        self.client = carla.Client(ip_address, 2000)
-        self.client.set_timeout(10.0)  # 防止性能太差，无法建立连接
-        self.world = self.client.get_world()
-        self.blueprint_library = self.world.get_blueprint_library()
-
-    def set_map(self, map):
-        try:
-            if self.world.get_map().name == map:
-                print("Map has already been loaded")
-            else:
-                self.client.load_world(map)
-                self.world = self.client.get_world()
-                print("New map loaded")
-        except Exception as exception:
-            print("Load {} failed:{}".format(map, exception))
-
-    def init(self):
-        pass
-
-    def run(self):
-        pass
-
-    def stop(self):
-        actor_list = [ x for x in self.world.get_actors() if x.type_id.split(".")[0]=="vehicle" or x.type_id.split(".")[0]=="walker" or x.type_id.split(".")[0]=="sensor" or x.type_id.split(".")[0]=="controller"]
-        self.client.apply_batch([carla.command.DestroyActor(x) for x in actor_list])
-
 
 class AdaptedActor:
     def __init__(self, world, ast_actor, actor_type="Vehicle"):
