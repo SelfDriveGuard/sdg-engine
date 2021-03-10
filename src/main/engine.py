@@ -8,7 +8,6 @@ from src.scenest_parser.ast.assertion.assertion import AgentVisibleDetectionAsse
 from src.tools import utils
 import numpy as np
 import mtl
-import time
 
 class Engine(threading.Thread):
     def __init__(self, code_file, callback, map_name=None, is_load_map = False, start_event = None, stop_event = None):
@@ -123,20 +122,14 @@ class Engine(threading.Thread):
 
             # Spectator
             self.carla_adapter.set_spectator()
+            # Create NPCs early
+            self.carla_adapter.create_npc_vehicles(self.current_scenenario.get_npc_vehicles())
             # Adapte ego
             ego = self.current_scenenario.get_ego_vehicle()
             adapted_ego = carla_adapter.AdaptedVehicle(self.carla_adapter.world, ego) 
             # Run autoware adapter
             self.autoware_adapter.init()
             self.autoware_adapter.run(adapted_ego, self.on_ego_state_change, self.on_trace_generated)
-            # TODO: optimize, use callback-sytye
-            #while self.autoware_adapter.ros_client.is_connected:
-             #   pass
-            # t = 90
-            # for i in range(t):
-            #     print(t-i)
-            #     # self.autoware_adapter.send_control_message(str(t-i))  
-            #     time.sleep(1)
         else:
             print("finish all scenenario_list")
 
@@ -183,8 +176,7 @@ class Engine(threading.Thread):
             self.autoware_adapter.send_control_message("start to drive")  
             # create other elements after EGO has been launched
             if self.current_scenenario.has_npc_vehicles():
-                self.carla_adapter.set_npc_vehicles(
-                    self.current_scenenario.get_npc_vehicles())
+                self.carla_adapter.run_npc_vehicles()
             if self.current_scenenario.has_pedestrians():
                 self.carla_adapter.set_pedestrians(
                     self.current_scenenario.get_pedestrians())
