@@ -1,18 +1,25 @@
 
 # sdg-engine
 这是sdg-engine引擎的docker文档。
-镜像基于Ubuntu20.04和python3.7.9，预安装了sdg-engine项目的各种依赖。
 
-#### How to Pull from Dockerhub and Run it
+## Build From Docker
 
-1. Run following command to pull this image.
+Run following command to pull this image.
 
-   ```sh
-   docker pull selfdriveguard/sdg-engine:[version tag]
-   ```
+```bash
+docker pull selfdriveguard/sdg-engine:[version tag]
+```
 
-2. Run following command to run this image.
+## How to run it with docker
+```sh
+docker run -it --network="host" selfdriveguard/sdg-engine:[version tag]
+```
 
-   ```sh
-   docker run -it --network="host" selfdriveguard/sdg-engine:[version tag]
-   ```
+## how to build image
+```sh
+# build image
+docker build -f /your/path/to/dockerfile -t [REPOSITORY:tag] .
+# push image
+docker login -u username -p password
+docker push [REPOSITORY:tag]
+```

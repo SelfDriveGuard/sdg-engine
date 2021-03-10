@@ -1,6 +1,6 @@
 # run from code
 
-## clone&compile
+## clone && compile
 
 ```
 # 后台
