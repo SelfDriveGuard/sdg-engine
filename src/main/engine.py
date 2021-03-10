@@ -51,11 +51,23 @@ class Engine(threading.Thread):
         self.start_event.wait()
         print("engine start test")
         self.start_test()
+
+        # # 模拟收到了前端发送的键盘移动指令
+        # i = 0
+        # a = ['key_w', 'key_s', 'key_a', 'key_d', 'drag_r', 'drag_l', 'drag_u', 'drag_d']
+        # while(True):
+        #     time.sleep(10)
+        #     self.carla_adapter.set_spectator_transform(a[i % 8])
+        #     i=i+1
+        
         self.stop_event.wait()
         print("caught stop event")
         self.stop()
         print("kill engine thread")
         #utils.stop_thread(self)
+
+    def change_view(self, code):       
+        self.carla_adapter.set_spectator_transform(code)
 
     def start_test(self):
 
@@ -109,6 +121,8 @@ class Engine(threading.Thread):
             else:
                 self.carla_adapter.set_map(map_name)
 
+            # Spectator
+            self.carla_adapter.set_spectator()
             # Adapte ego
             ego = self.current_scenenario.get_ego_vehicle()
             adapted_ego = carla_adapter.AdaptedVehicle(self.carla_adapter.world, ego) 

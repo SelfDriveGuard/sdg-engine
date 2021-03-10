@@ -17,6 +17,7 @@ class CarlaAdapter:
         self.npc_thread_list = []
         self.blueprint_library = None
         self.id_name_map = {}
+        self.spectator = None
 
     # Map
 
@@ -33,6 +34,85 @@ class CarlaAdapter:
         except Exception as exception:
             print("Load {} failed:{}".format(map, exception))
         self.blueprint_library = self.world.get_blueprint_library()
+
+    # Get Spectator and spawn corresponding Sensor
+
+    def set_spectator(self):
+        self.spectator = self.world.get_spectator()
+        sensor_blueprint = self.world.get_blueprint_library().find('sensor.camera.rgb')
+        # Modify the attributes of the blueprint to set image resolution and field of view.
+        sensor_blueprint.set_attribute('image_size_x', '1920')
+        sensor_blueprint.set_attribute('image_size_y', '1080')
+        sensor_blueprint.set_attribute('fov', '110')
+        # Set the time in seconds between sensor captures
+        sensor_blueprint.set_attribute('sensor_tick', '0.1')
+        transform = carla.Transform(
+            carla.Location(x=-4, z=1.9))
+        sensor = self.world.spawn_actor(
+            sensor_blueprint, transform, attach_to=self.spectator)
+        self.actor_list.append(sensor)
+
+        print(
+            "Sensor created:{}-{}".format(sensor.id, sensor.type_id))
+
+    # WASD Move spectator
+
+    def set_spectator_transform(self, ins):
+        print(ins)
+        transform = None
+        if ins == 'key_w':
+            transform = self.get_transform_offset(x=0.5)
+        elif ins == 'key_s':
+            transform = self.get_transform_offset(x=-0.5)
+        elif ins == 'key_d':
+            transform = self.get_transform_offset(y=0.5)
+        elif ins == 'key_a':
+            transform = self.get_transform_offset(y=-0.5)
+        elif ins == 'key_q':
+            transform = self.get_transform_offset(z=-0.5)
+        elif ins == 'key_e':
+            transform = self.get_transform_offset(z=0.5)
+        elif ins == 'drag_r':
+            transform = self.get_transform_drag(angleX=-1)
+        elif ins == 'drag_l':
+            transform = self.get_transform_drag(angleX=1)
+        elif ins == 'drag_u':
+            transform = self.get_transform_drag(angleY=1)
+        elif ins == 'drag_d':
+            transform = self.get_transform_drag(angleY=-1)
+        else:
+            print("key not supported")
+            return
+        self.spectator.set_transform(transform)
+        print(transform)
+        print("Sensor location: --")
+    
+    # 处理WASD键的前后左右移动
+
+    def get_transform_offset(self, x=0, y=0, z=0):
+        #角度转弧度
+        pitch_radius = math.radians(self.spectator.get_transform().rotation.pitch) #y
+        yaw_radius = math.radians(-self.spectator.get_transform().rotation.yaw)  #z
+        #绕y轴旋转
+        x_1 = x * math.cos(pitch_radius) - z * math.sin(pitch_radius)
+        z_1 = x * math.sin(pitch_radius) + z * math.cos(pitch_radius)
+        y_1 = y
+        #绕z轴旋转
+        y_2 = y_1 * math.cos(yaw_radius) - x_1 * math.sin(yaw_radius)
+        x_2 = y_1 * math.sin(yaw_radius) + x_1 * math.cos(yaw_radius)
+        z_2 = z_1          
+        #根据偏移，设置位置
+        location = carla.Location(x_2, y_2, z_2) + self.spectator.get_location()
+        transform = carla.Transform(location, self.spectator.get_transform().rotation)
+        return transform
+    
+    # 处理鼠标拖拽左右拖拽（yaw）和上下拖拽（pitch）
+
+    def get_transform_drag(self, angleX=0, angleY=0):
+        origin_rotation = self.spectator.get_transform().rotation
+        rotation = carla.Rotation(yaw=angleX + origin_rotation.yaw, pitch=angleY + origin_rotation.pitch, roll=origin_rotation.roll)
+        transform = carla.Transform(self.spectator.get_location(), rotation)
+        return transform
 
     # NPCVehicles
 
