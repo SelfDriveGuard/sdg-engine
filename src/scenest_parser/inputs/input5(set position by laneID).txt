@@ -1,0 +1,40 @@
+map = "Town03";
+
+// ego car
+ego_init_position = (107.89,62.54); //default coordinate frame is ENU
+ego_target_position = (122,62.54); //default coordinate frame is ENU
+ego_init_state = (ego_init_position);
+ego_target_state = (ego_target_position);
+
+car_model = "Lincoln MKZ 2017";
+car_color = (255, 0, 0);
+vehicle_type = (car_model, car_color);
+ego_vehicle = AV(ego_init_state, ego_target_state, vehicle_type);
+
+// npc car
+state1 = ("52.-1"->0.0, , 0.0) ; // start
+wp1 = ((8,40));
+state2 = ("52.1"->0.0, , 0.0) ; // target
+waypoints = (wp1);
+npc = Vehicle(state1, Waypoint(waypoints), state2);
+
+npcs = {npc};
+
+// pedestrian
+pedestrian_type = (1.65, black);
+pedestrian = Pedestrian(((19,13), ,0.5), , ((0,13), ,0), pedestrian_type);
+pedestrians={pedestrian};
+time = 10:00;
+weather = {rain: 0.1};
+env = Environment(time, weather);
+
+
+
+scenario = CreateScenario{load(map);
+			        ego_vehicle;
+			        npcs;
+			        pedestrians;
+			        {};
+			        env;
+                          {};
+};

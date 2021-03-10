@@ -1,0 +1,27 @@
+[tool.poetry]
+name = "autonomousdrivingtest"
+version = "0.9"
+description = ""
+authors = ["Zhai Yunyun, Yan Songyang, Ruan Shuning"]
+license = "MIT"
+
+[tool.poetry.dependencies]
+python = "^3.7.0"
+requests = "^2.25.1"
+websockets = "^8.1"
+antlr4-python3-runtime = "^4.8.0"
+numpy = "1.19"
+networkx = "^2.5"
+roslibpy = "^1.1.0"
+metric-temporal-logic = "^0.2.2"
+
+[tool.poetry.dev-dependencies]
+autopep8 = "^1.5.4"
+
+[[tool.poetry.source]]
+name = "aliyun"
+url = "https://mirrors.aliyun.com/pypi/simple/"
+
+[build-system]
+requires = ["poetry-core>=1.0.0"]
+build-backend = "poetry.core.masonry.api"

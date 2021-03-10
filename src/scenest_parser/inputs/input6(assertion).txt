@@ -1,0 +1,78 @@
+map = "Town03";
+
+// ego car
+ego_init_position = (101,62.48); //default coordinate frame is ENU
+ego_target_position = (165,62.48); //default coordinate frame is ENU
+ego_init_state = (ego_init_position);
+ego_target_state = (ego_target_position);
+
+car_model = "Lincoln MKZ 2017";
+car_color = (255, 0, 0);
+vehicle_type = (car_model, car_color);
+ego_vehicle = AV(ego_init_state, ego_target_state, vehicle_type);
+
+// npc car
+state1 = ("52.-1"->0.0, , 0.0) ; // start
+wp1 = ((8,40));
+state2 = ("52.1"->0.0, , 0.0) ; // target
+waypoints = (wp1);
+npc1 = Vehicle(state1, Waypoint(waypoints), state2);
+
+// npc 2: move along given waypoints
+npc_init_state2 = ("52.-1"->5.0, ,0.0);
+npc_state = (("52.-1"->5.0, , 0.0), ("52.1"->2.0, ,1.0));
+npc2 = Vehicle(npc_init_state2, Waypoint(npc_state), ("52.1"->2.0, ,0.0), vehicle_type);
+
+// npc  3: static vehicle
+heading = 45 deg related to EGO;
+npc_init_state3 = ((9.5, 114), heading, 0.0);
+npc3 = Vehicle(("75.-1"->0.0, ,0.0), , ("494.-1"->1.0, ,0.0));
+
+npcs = {npc1, npc2, npc3};
+
+//npcs = {npc};
+
+// pedestrian
+pedestrian_type = (1.65, black);
+pedestrian1 = Pedestrian(((-15.9, 110), ,0.5), , ((-56, 123), ,0), pedestrian_type);
+pedestrian2 = Pedestrian(((101, 62), ,0.5), , ((120, 144), ,0), pedestrian_type);
+pedestrians={pedestrian1, pedestrian2};
+time = 10:00;
+weather = {rain: 0.1};
+env = Environment(time, weather);
+
+//traffic requirements
+speed_range = (0,20);
+speed_limit = SpeedLimit("52.-1", speed_range);
+i1 = Intersection(1, 1, 0, 1);
+traffic = {i1,speed_limit};
+
+scenario = CreateScenario{load(map);
+			        ego_vehicle;
+			        npcs;
+			        pedestrians;
+			        {};
+			        env;
+			        traffic;
+};
+
+Trace trace = EXE(scenario);
+
+ego_vehicle_state= trace[1][ego];
+npc_vehicle1= trace[1][perception][npc2];
+npc_vehicle1_ground= trace[1][truth][npc2];
+pedestrian_truth = trace[1][perception][pedestrian1];
+pedestrian_ground = trace[1][truth][pedestrian1];
+
+dis1 = dis(ego_vehicle_state, npc_vehicle1_ground);
+error = diff(npc_vehicle1, npc_vehicle1_ground);
+perception_detection = dis1<= 3 & error <= 4;
+trace |=G perception_detection;
+intersection_assertion=(trace[1][perception][traffic]==trace[1][truth][traffic]
+	&trace[1][traffic]==red)->(~norm((100,100))U(trace[1][perception][traffic]==trace[1][truth][traffic]
+	&trace[1][traffic]==green));
+trace |=G intersection_assertion;
+speed_constraint_assertion=(trace[1][perception][traffic]==trace[1][truth][traffic]
+	&trace[1][traffic]==(100,200)&120<trace[1][traffic][0])
+	->F[0,2]~120<trace[1][traffic][0];
+trace |=G speed_constraint_assertion;
