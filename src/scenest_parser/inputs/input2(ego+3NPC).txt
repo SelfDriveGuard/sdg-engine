@@ -1,3 +1,6 @@
+// This script demonstrates how to plan the route of npc vehicles. By specifying the starting position, target position and waypoints, npc vehicles can travel according to a certain route.
+// In this script, npc1 takes (151.03, -4.47) and (4.2, -101) as the starting position and target position, passing (3.5, -30). npc2 takes (137, -8.18) and (42.88, -139.06) as the starting position and target position, passing (83.42, -34.67). The default coordinate system here is the E-N-U.
+
 map = "Town03";
 
 // ego car
@@ -12,18 +15,18 @@ vehicle_type = (car_model, car_color);
 ego_vehicle = AV(ego_init_state, ego_target_state, vehicle_type);
 
 // npc car
-state1 = ((151.03, -4.47),,5) ; // start
-wp1 = ((3.5, -30));
-state2 = ((4.2, -101),,5) ; // target
-waypoints1 = (wp1);
-npc1 = Vehicle(state1, Waypoint(waypoints1), state2);
+npc1_init_state = ((151.03, -4.47),,5); // start
+npc1_waypoint = ((3.5, -30));
+npc1_target_state = ((4.2, -101),,5); 	// target
+npc1_waypoints = (npc1_waypoint);
+npc1 = Vehicle(npc1_init_state, Waypoint(npc1_waypoints), npc1_target_state);
 
 // npc car
-state3 = ((137, -8.18),,5) ; // start
-wp2 = ((83.42, -34.67));
-state4 = ((42.88, -139.06),,5) ; // target
-waypoints2 = (wp2);
-npc2 = Vehicle(state3, Waypoint(waypoints2), state4);
+npc2_init_state = ((137, -8.18),,5); 		// start
+npc2_waypoint = ((83.42, -34.67));
+npc2_target_state = ((42.88, -139.06),,5); // target
+npc2_waypoints = (npc2_waypoint);
+npc2 = Vehicle(npc2_init_state, Waypoint(npc2_waypoints), npc2_target_state);
 
 npcs = {npc1, npc2};
 
@@ -31,16 +34,18 @@ npcs = {npc1, npc2};
 pedestrian_type = (1.65, black);
 pedestrian1 = Pedestrian(((-15.9, 110), ,0.5), , ((-56, 123), ,0), pedestrian_type);
 pedestrian2 = Pedestrian(((101, 62), ,0.5), , ((120, 144), ,0), pedestrian_type);
-pedestrians={pedestrian1, pedestrian2};
+pedestrians = {pedestrian1, pedestrian2};
+
+// env
 time = 10:00;
 weather = {rain: 0.1};
 env = Environment(time, weather);
 
-//traffic requirements
-speed_range = (0,20);
+// traffic requirements
+speed_range = (0, 20);
 speed_limit = SpeedLimit("52.-1", speed_range);
-i1 = Intersection(1, 1, 0, 1);
-traffic = {i1,speed_limit};
+intersection = Intersection(1, 1, 0, 1);
+traffic = {intersection, speed_limit};
 
 scenario = CreateScenario{load(map);
 			        ego_vehicle;
