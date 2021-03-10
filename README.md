@@ -1,7 +1,7 @@
 # sdg-engine
 自驾保执行引擎项目
 
->本文档是执行引擎项目说明文档，自驾保整体环境搭建，请参照：[环境搭建](https://github.com/SelfDriveGuard/sdg-engine/docs/setup/setup.md)
+>本文档是执行引擎项目说明文档，自驾保整体环境搭建，请参照：[环境搭建](https://github.com/SelfDriveGuard/sdg-engine/blob/master/docs/setup/setup.md)
 
 # How to run
 1. 安装环境依赖
