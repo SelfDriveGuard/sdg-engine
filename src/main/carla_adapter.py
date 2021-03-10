@@ -2,9 +2,9 @@ import threading
 import random
 import carla
 from src.scenest_parser.ast.base.weathers import WeatherContinuousIndex
-from src.tools.AutoController import AutoCotroller
 from src.tools import utils
 import math
+from src.tools.agents.navigation.behavior_agent import BehaviorAgent
 
 # TODO: (optimize)reduce the usage of world.get_map()
 
@@ -14,9 +14,12 @@ class CarlaAdapter:
         self.client = carla.Client(ip_address, 2000)
         self.world = None
         self.actor_list = []
-        self.npc_thread_list = []
+        self.autopilot_batch = []
+        self.vehicle_agent_dict = {}
+        self.npc_thread = None
         self.blueprint_library = None
         self.id_name_map = {}
+        self.traffic_manager = self.client.get_trafficmanager(9988)
 
     # Map
 
@@ -36,24 +39,58 @@ class CarlaAdapter:
 
     # NPCVehicles
 
-    def set_npc_vehicles(self, npcs):
+    def create_npc_vehicles(self, npcs):
         print("Number of NPCs:"+str(npcs.get_size()))
-        if npcs.get_size() > 0:
-            npc_vehicles = npcs._vehicles
-            for index, npc in enumerate(npc_vehicles):
+        if npcs.get_size() < 1:
+            return
+        spawn_batch = []
+        adapted_vehicles = []
 
-                adapted_vehicle = AdaptedVehicle(self.world, npc)
-                adapted_vehicle.spawn()
-                adapted_vehicle.draw_tips() #debug
-                # 维护walker_name变量名与carla中actor.id的对应关系
-                self.id_name_map[str(
-                    adapted_vehicle.carla_actor.id)] = adapted_vehicle.name
-                thread = AutoVehicelThread(
-                    adapted_vehicle, adapted_vehicle.target_transform.location, self.world)
-                thread.start()
-                self.npc_thread_list.append(thread)
-                self.actor_list.append(adapted_vehicle.carla_actor)
-                print(adapted_vehicle.info())
+        npc_vehicles = npcs._vehicles
+        for npc in npc_vehicles:
+            adapted_vehicle = AdaptedVehicle(self.world, npc)
+            adapted_vehicles.append(adapted_vehicle)
+            spawn_batch.append(carla.command.SpawnActor(
+                adapted_vehicle.blueprint, adapted_vehicle.start_transform))
+
+        # spawn npcs together
+        for index, response in enumerate(self.client.apply_batch_sync(spawn_batch, True)):
+            if response.error:
+                print(response.error)
+                adapted_vehicles[index].carla_actor = None
+            else:
+                actor = self.world.get_actor(response.actor_id)
+                adapted_vehicles[index].carla_actor = actor
+                self.actor_list.append(actor)
+
+        for adapted_vehicle in adapted_vehicles:
+            if adapted_vehicle.carla_actor is None:
+                continue
+            if adapted_vehicle.use_auto():
+                # set auto pilot
+                self.autopilot_batch.append(carla.command.SetAutopilot(
+                    adapted_vehicle.carla_actor, True, self.traffic_manager.get_port()))
+            else:
+                # init agent
+                agent = BehaviorAgent(
+                    adapted_vehicle.carla_actor, ignore_traffic_light=False, behavior='normal')
+                destination_list = [
+                    t.location for t in adapted_vehicle.path_transform_list]
+                agent.set_many_destinations(destination_list, clean=True)
+                self.vehicle_agent_dict[adapted_vehicle] = agent
+            # adapted_vehicle.draw_tips() #debug
+            # 维护walker_name变量名与carla中actor.id的对应关系
+            self.id_name_map[str(
+                adapted_vehicle.carla_actor.id)] = adapted_vehicle.name
+
+            print(adapted_vehicle.info())
+
+    def run_npc_vehicles(self):
+        for response in self.client.apply_batch_sync(self.autopilot_batch, True):
+            if response.error:
+                print(response.error)
+        self.npc_thread = NPCControlThread(self.vehicle_agent_dict, self.world)
+        self.npc_thread.start()
 
     # Pedestrians
 
@@ -156,24 +193,17 @@ class CarlaAdapter:
 
     def destory(self):
         # npc thread
-        for thread in self.npc_thread_list:
-            # thread.join()
-            if thread.is_alive():
-                utils.stop_thread(thread)
-        for actor in self.actor_list:
-            if actor is not None and actor.is_alive:
-                print("Destroying:"+str(actor))
-                actor.destroy()
+        if self.npc_thread is not None and self.npc_thread.is_alive():
+            utils.stop_thread(self.npc_thread)
+        actor_ids = [x.id for x in self.actor_list]
+        self.client.apply_batch(
+            [carla.command.DestroyActor(x) for x in actor_ids])
         self.actor_list = []
-        self.npc_thread_list = []
+        self.autopilot_batch = []
+        self.vehicle_agent_dict = {}
+        self.npc_thread = None
         self.blueprint_library = None
         self.id_name_map = {}
-
-    def has_thread_alive(self):
-        for thread in self.npc_thread_list:
-            if thread.is_alive():
-                return True
-        return False
 
     # if key_id in id_name_map
 
@@ -198,15 +228,32 @@ class CarlaAdapter:
         return self.id_name_map[key_id]
 
 
-class AutoVehicelThread(threading.Thread):
-    def __init__(self, adapted_vehicle, target_location, world):
+class NPCControlThread(threading.Thread):
+    def __init__(self, vehicle_agent_dict, world):
         threading.Thread.__init__(self)
-        self.adapted_vehicle = adapted_vehicle
-        self.target_location = target_location
+        self.vehicle_agent_dict = vehicle_agent_dict
         self.world = world
 
     def run(self):
-        AutoCotroller(self.adapted_vehicle , self.world)
+        for adapted_vehicle in list(self.vehicle_agent_dict.keys()):
+            adapted_vehicle.set_speed()
+        while True:
+            if not self.world.wait_for_tick(10.0):
+                continue
+
+            if len(self.vehicle_agent_dict) == 0:
+                break
+
+            for adapted_vehicle in list(self.vehicle_agent_dict.keys()):
+                agent = self.vehicle_agent_dict[adapted_vehicle]
+                agent.update_information(self.world)
+                if len(agent.get_local_planner().waypoints_queue) == 0:
+                    print("[{}]:reached".format(adapted_vehicle.name))
+                    adapted_vehicle.stop()
+                    self.vehicle_agent_dict.pop(adapted_vehicle)
+                else:
+                    control = agent.run_step()
+                    adapted_vehicle.carla_actor.apply_control(control)
 
 
 class AdaptedActor:
@@ -275,7 +322,8 @@ class AdaptedActor:
                 middle_transform_list = []
                 for state in self.ast_actor.get_vehicle_motion().get_motion().get_state_list().get_states():
                     position = state.get_position()
-                    transform = self.__get_valid_transform(position, actor_type)
+                    transform = self.__get_valid_transform(
+                        position, actor_type)
                     middle_transform_list.append(transform)
                 path_transform_list = path_transform_list + middle_transform_list
         except:
@@ -295,15 +343,15 @@ class AdaptedActor:
 
     def draw_tips(self):
         # Debug: draw tips on the Carla world
-        r = random.randint(0,255)
-        g = random.randint(0,255)
-        b = random.randint(0,255)
+        r = random.randint(0, 255)
+        g = random.randint(0, 255)
+        b = random.randint(0, 255)
         self.world.debug.draw_string(self.start_transform.location, "[{}]START".format(self.name), draw_shadow=False,
-                                        color=carla.Color(r=r, g=g, b=b), life_time=100,
-                                        persistent_lines=True)
+                                     color=carla.Color(r=r, g=g, b=b), life_time=100,
+                                     persistent_lines=True)
         self.world.debug.draw_string(self.target_transform.location, "[{}]TARGET".format(self.name), draw_shadow=False,
-                                        color=carla.Color(r=r, g=g, b=b), life_time=100,
-                                        persistent_lines=True)
+                                     color=carla.Color(r=r, g=g, b=b), life_time=100,
+                                     persistent_lines=True)
 
     def info(self):
         def __get_float_value(x_str):
@@ -423,15 +471,30 @@ class AdaptedVehicle(AdaptedActor):
             for bp in self.blueprint_library.filter(motorbicycle):
                 self.motorbicycle.append(bp)
 
-    def spawn(self):
-        AdaptedActor.spawn(self)
+    def set_speed(self):
         if self.ast_actor.get_first_state().has_speed():
-            speed = float(self.ast_actor.get_first_state().get_speed().get_speed_value())
-            self.carla_actor.enable_constant_velocity(carla.Vector3D(speed,0,0))
-            print("set {} speed to {}".format(self.ast_actor.get_name(), speed))
+            speed = float(
+                self.ast_actor.get_first_state().get_speed().get_speed_value())
+            if speed >= 0:
+                self.carla_actor.enable_constant_velocity(
+                    carla.Vector3D(speed, 0, 0))
+                print("set {} speed to {}".format(
+                    self.ast_actor.get_name(), speed))
+
+    def use_auto(self):
+        if self.ast_actor.get_first_state().has_speed():
+            speed = float(
+                self.ast_actor.get_first_state().get_speed().get_speed_value())
+            if speed >= 0:
+                return False
+            else:
+                return True
+        else:
+            return False
 
     def stop(self):
-        self.carla_actor.enable_constant_velocity(carla.Vector3D(0,0,0))
+        self.carla_actor.enable_constant_velocity(carla.Vector3D(0, 0, 0))
+
 
 class AdaptedPedestrian(AdaptedActor):
     def __init__(self, world, ast_actor):
