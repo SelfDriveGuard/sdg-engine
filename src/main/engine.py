@@ -37,8 +37,8 @@ class Engine(threading.Thread):
         self.stop_event = stop_event
 
         # TODO: language choose
-        self.language = "SCENEST"
-        # self.language = "SCENIC"
+        # self.language = "SCENEST"
+        self.language = "SCENIC"
 
     def run(self):
         if os.environ.get("CARLA_SERVER_IP") == None:
@@ -87,16 +87,22 @@ class Engine(threading.Thread):
             print("using scenic")
 
             # parse scenic file
-            scenario = scenic.scenarioFromFile(path = self.code_file)
-            scene = scenario.generate()[0]
+            try:
+                scenario = scenic.scenarioFromFile(path = self.code_file)
+                scene = scenario.generate()[0]
+            except Exception as exception:
+                print("Scenic parse error:{}".format(exception))
 
             # get ego object, run autoware
             ego_object = scene.egoObject
-            ego_position = ego_object.position
-
+            ego_start_coordinates = ego_object.position.coordinates
+            adapted_ego = AdaptedVehicle(world = self.carla_adapter.world, name = "ego_vehicle")
+            adapted_ego.set_start_position(ego_start_coordinates)
+            adapted_ego.set_random_target()
+            self.autoware_adapter.init()
+            self.autoware_adapter.run(adapted_ego, self.on_ego_state_change, self.on_trace_generated)
 
             # run carla
-            return
 
 
     def __start_next_scenenario(self, map_name=None):
@@ -178,17 +184,17 @@ class Engine(threading.Thread):
             self.callback(info_msg)
             self.autoware_adapter.send_control_message("ego stopped")  
             # TODO: use self.trace
-            trace_list = self.ast.get_traces()
-            self.check_assertion(trace_list)
-            
-            # 发送assert信息给前端页面
-            assert_msg = {
-                'state': 'notRunning',
-                'cmd': 'ASSERT',
-                'msg': self.assertion
-            }
-            self.callback(assert_msg)
-            self.autoware_adapter.send_control_message("trace done")  
+            if self.language == "SCENEST":
+                trace_list = self.ast.get_traces()
+                self.check_assertion(trace_list)  
+                # 发送assert信息给前端页面
+                assert_msg = {
+                    'state': 'notRunning',
+                    'cmd': 'ASSERT',
+                    'msg': self.assertion
+                }
+                self.callback(assert_msg)
+                self.autoware_adapter.send_control_message("trace done")  
             self.stop()
 
     def on_trace_generated(self, trace):

@@ -172,6 +172,18 @@ class AdaptedVehicle(AdaptedActor):
         if self.carla_actor is not None:
             self.carla_actor.enable_constant_velocity(carla.Vector3D(0, 0, 0))
 
+    def set_random_target(self):
+        spawn_points = self.world.get_map().get_spawn_points()
+        random.shuffle(spawn_points)
+        for transform in spawn_points:
+            if self.start_transform is not None:
+                if abs(self.start_transform.location.x - transform.location.x) < 10 or abs(self.start_transform.location.y - transform.location.y) < 10:
+                    continue
+            self.target_transform = transform
+            break
+
+            
+
 
 class AdaptedPedestrian(AdaptedActor):
     def __init__(self, world, name, blueprint):
