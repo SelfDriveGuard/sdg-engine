@@ -208,7 +208,7 @@ class Engine(threading.Thread):
                 'msg': self.assertion
             }
             self.callback(assert_msg)
-            self.autoware_adapter.send_control_message("trace done")  
+            self.autoware_adapter.send_control_message("trace done")
             self.stop()
 
     def on_trace_generated(self, trace):

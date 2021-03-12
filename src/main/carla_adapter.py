@@ -44,11 +44,11 @@ class CarlaAdapter:
         self.spectator = self.world.get_spectator()
         sensor_blueprint = self.world.get_blueprint_library().find('sensor.camera.rgb')
         # Modify the attributes of the blueprint to set image resolution and field of view.
-        sensor_blueprint.set_attribute('image_size_x', '1920')
-        sensor_blueprint.set_attribute('image_size_y', '1080')
+        sensor_blueprint.set_attribute('image_size_x', '960')
+        sensor_blueprint.set_attribute('image_size_y', '540')
         sensor_blueprint.set_attribute('fov', '110')
         # Set the time in seconds between sensor captures
-        sensor_blueprint.set_attribute('sensor_tick', '0.1')
+        sensor_blueprint.set_attribute('sensor_tick', '0.05')
         transform = carla.Transform(
             carla.Location(x=-4, z=1.9))
         sensor = self.world.spawn_actor(
@@ -275,9 +275,11 @@ class CarlaAdapter:
         # npc thread
         if self.npc_thread is not None and self.npc_thread.is_alive():
             utils.stop_thread(self.npc_thread)
+        # self.actor_list.reverse()
         actor_ids = [x.id for x in self.actor_list]
-        self.client.apply_batch(
-            [carla.command.DestroyActor(x) for x in actor_ids])
+        print(actor_ids)
+        self.client.apply_batch_sync(
+            [carla.command.DestroyActor(x) for x in actor_ids], True)
         self.actor_list = []
         self.autopilot_batch = []
         self.vehicle_agent_dict = {}
