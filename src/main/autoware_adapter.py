@@ -7,6 +7,7 @@ import asyncio
 
 ros = None
 
+
 class AutowareAdapter:
     def __init__(self, ip):
         self.adapted_ego = None
@@ -21,13 +22,13 @@ class AutowareAdapter:
             self.ros_client = roslibpy.Ros(host=ip, port=9090)
             self.ros_client.run()
             ros = self.ros_client
-        
+
         #self.ros_client = roslibpy.Ros(host=ip, port=9090)
         #print('Is ROS connected?', self.ros_client.is_connected)
         # 关闭或终止都会导致下次无法通过run建立连接，所以连接不断开
       #  if self.ros_client.is_connected is False:
           #  self.ros_client.run()
-        
+
         print('Is ROS connected?', self.ros_client.is_connected)
         # use websocket to control
         self.ws_uri = "ws://{}:9091".format(ip)
@@ -105,8 +106,8 @@ class AutowareAdapter:
         self.EGO_LAUNCH_FLAG = False
         self.TARGET_SEND_FLAG = False
         self.EGO_REACH_FLAG = False
-        #self.ros_client.terminate()
-        #self.ros_client.close()
+        # self.ros_client.terminate()
+        # self.ros_client.close()
         self.trace = []
 
     def ego_has_spawned(self):
@@ -168,7 +169,7 @@ class AutowareAdapter:
 
         result = self.ros_manager.call(request, timeout=10)
 
-        print("[{}]:{}".format(cmd,result))
+        print("[{}]:{}".format(cmd, result))
 
     def send_control_message(self, cmd, data={'data': None}):
         msg = json.dumps(
@@ -177,8 +178,8 @@ class AutowareAdapter:
                 "data": data
             }
         )
-        #self.send_to_ws(msg)
-        #asyncio.create_task(self.send_to_ws(msg))
+        # self.send_to_ws(msg)
+        # asyncio.create_task(self.send_to_ws(msg))
         asyncio.run(self.send_to_ws(msg))
 
     async def send_to_ws(self, msg):

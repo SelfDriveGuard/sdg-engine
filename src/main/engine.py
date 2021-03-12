@@ -1,6 +1,7 @@
 import os
 import threading
 from src.main import autoware_adapter
+from src.main import scenest_carla_adapter
 from src.main.scenest_carla_adapter import ScenestCarlaAdapter
 from src.main.scenic_carla_adapter import ScenicCarlaAdapter
 from src.main.carla_adapter import AdaptedVehicle
@@ -36,8 +37,8 @@ class Engine(threading.Thread):
         self.stop_event = stop_event
 
         # TODO: language choose
-        # self.language = "SCENEST"
-        self.language = "SCENIC"
+        self.language = "SCENEST"
+        # self.language = "SCENIC"
 
     def run(self):
         if os.environ.get("CARLA_SERVER_IP") == None:
@@ -87,10 +88,12 @@ class Engine(threading.Thread):
 
             # parse scenic file
             scenario = scenic.scenarioFromFile(path = self.code_file)
-            scene = scenario.generate()
-            egoObject = scene.egoObject
+            scene = scenario.generate()[0]
 
             # get ego object, run autoware
+            ego_object = scene.egoObject
+            ego_position = ego_object.position
+
 
             # run carla
             return
@@ -111,7 +114,8 @@ class Engine(threading.Thread):
 
             # Adapte ego
             ego = self.current_scenenario.get_ego_vehicle()
-            adapted_ego = AdaptedVehicle(self.carla_adapter.world, ego)
+            adapted_ego = AdaptedVehicle(world = self.carla_adapter.world, name = ego.get_name())
+            scenest_carla_adapter.set_position(ego, adapted_ego)
             # Run autoware adapter
             self.autoware_adapter.init()
             self.autoware_adapter.run(adapted_ego, self.on_ego_state_change, self.on_trace_generated)
