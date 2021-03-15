@@ -61,7 +61,7 @@ class EngineWebsocket:
 
     async def send_msg(self, msg):
         cmd = msg["cmd"]
-        if cmd == "assert" or cmd == "STOP":
+        if cmd == "ASSERT" or cmd == "STOP":
             self.set_engine_running(False)
         else:
             self.set_engine_running(True)
