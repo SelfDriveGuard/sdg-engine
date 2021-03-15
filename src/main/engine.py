@@ -135,6 +135,18 @@ class Engine(threading.Thread):
 
 
     def stop(self):
+        # TODO: use self.trace
+        trace_list = self.ast.get_traces()
+        self.check_assertion(trace_list)        
+        # 发送assert信息给前端页面
+        assert_msg = {
+            'state': 'notRunning',
+            'cmd': 'ASSERT',
+            'msg': self.assertion
+        }
+        self.callback(assert_msg)
+        self.autoware_adapter.send_control_message("trace done")
+        # 结束arla_adapter和autoware_adapter
         print("Stoping engine")
         self.autoware_adapter.send_control_message("start to stop")  
         self.carla_adapter.destory()
@@ -196,19 +208,7 @@ class Engine(threading.Thread):
                 'msg': "Ego reached target"
             }
             self.callback(info_msg)
-            self.autoware_adapter.send_control_message("ego stopped")  
-            # TODO: use self.trace
-            trace_list = self.ast.get_traces()
-            self.check_assertion(trace_list)
-            
-            # 发送assert信息给前端页面
-            assert_msg = {
-                'state': 'notRunning',
-                'cmd': 'ASSERT',
-                'msg': self.assertion
-            }
-            self.callback(assert_msg)
-            self.autoware_adapter.send_control_message("trace done")
+            self.autoware_adapter.send_control_message("ego stopped")
             self.stop()
 
     def on_trace_generated(self, trace):

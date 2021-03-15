@@ -76,13 +76,13 @@ class CarlaAdapter:
         elif ins == 'key_e':
             transform = self.get_transform_offset(z=0.5)
         elif ins == 'drag_r':
-            transform = self.get_transform_drag(angleX=-1)
+            transform = self.get_transform_drag(angleX=5)
         elif ins == 'drag_l':
-            transform = self.get_transform_drag(angleX=1)
+            transform = self.get_transform_drag(angleX=-5)
         elif ins == 'drag_u':
-            transform = self.get_transform_drag(angleY=1)
+            transform = self.get_transform_drag(angleY=5)
         elif ins == 'drag_d':
-            transform = self.get_transform_drag(angleY=-1)
+            transform = self.get_transform_drag(angleY=-5)
         else:
             print("key not supported")
             return
