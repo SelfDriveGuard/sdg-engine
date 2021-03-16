@@ -217,6 +217,7 @@ class Engine(threading.Thread):
 
     def check_assertion(self, trace_list):
         print("Check Assertion")
+        self.assertion = []
         # trace数据转换
         self.__change_trace_key()
 
