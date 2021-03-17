@@ -113,6 +113,8 @@ class AutowareAdapter:
     def ego_has_spawned(self):
         # judge whether the EGO has been created
         # by role_name set by launch config file
+        if self.adapted_ego is None:
+            return False
         for actor in self.adapted_ego.world.get_actors():
             if actor.type_id.split(".")[0] == "vehicle":
                 if actor.attributes['role_name'] == "ego_vehicle":

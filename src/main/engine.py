@@ -50,7 +50,7 @@ class Engine(threading.Thread):
         if self.language == "SCENEST":
             self.carla_adapter = ScenestCarlaAdapter(os.environ.get("CARLA_SERVER_IP"))
         if self.language == "SCENIC":
-            self.carla_adapter = ScenicCarlaAdapter(os.environ.get("CARLA_SERVER_IP"))
+            self.carla_adapter = ScenicCarlaAdapter(os.environ.get("CARLA_SERVER_IP"), self.map_name)
 
         # 前端指令切换地图
         if self.is_load_map:
@@ -86,23 +86,23 @@ class Engine(threading.Thread):
         if self.language == "SCENIC":
             print("using scenic")
 
-            # parse scenic file
-            try:
-                scenario = scenic.scenarioFromFile(path = self.code_file)
-                scene = scenario.generate()[0]
-            except Exception as exception:
-                print("Scenic parse error:{}".format(exception))
+            self.carla_adapter.init(self.code_file)
+            self.carla_adapter.run()
+
+                
 
             # get ego object, run autoware
-            ego_object = scene.egoObject
-            ego_start_coordinates = ego_object.position.coordinates
-            adapted_ego = AdaptedVehicle(world = self.carla_adapter.world, name = "ego_vehicle")
-            adapted_ego.set_start_position(ego_start_coordinates)
-            adapted_ego.set_random_target()
-            self.autoware_adapter.init()
-            self.autoware_adapter.run(adapted_ego, self.on_ego_state_change, self.on_trace_generated)
+            # ego_object = scene.egoObject
+            # ego_start_coordinates = ego_object.position.coordinates
+            # adapted_ego = AdaptedVehicle(world = self.carla_adapter.world, name = "ego_vehicle")
+            # adapted_ego.set_start_position(ego_start_coordinates)
+            # adapted_ego.set_random_target()
+            # self.autoware_adapter.init()
+            # self.autoware_adapter.run(adapted_ego, self.on_ego_state_change, self.on_trace_generated)
 
-            # run carla
+           
+
+
 
 
     def __start_next_scenenario(self, map_name=None):
@@ -132,11 +132,11 @@ class Engine(threading.Thread):
 
     def stop(self):
         print("Stoping engine")
-        self.autoware_adapter.send_control_message("start to stop")  
+        if self.autoware_adapter.ego_has_spawned():
+            self.autoware_adapter.stop()
         self.carla_adapter.stop()
-        self.autoware_adapter.send_control_message("carla adapter destroyed")  
-        self.autoware_adapter.stop()
         self.trace = []
+
 
     # TODO: make message constant
     # state:
@@ -182,7 +182,6 @@ class Engine(threading.Thread):
                 'msg': "Ego reached target"
             }
             self.callback(info_msg)
-            self.autoware_adapter.send_control_message("ego stopped")  
             # TODO: use self.trace
             if self.language == "SCENEST":
                 trace_list = self.ast.get_traces()
