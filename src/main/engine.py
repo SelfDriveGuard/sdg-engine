@@ -87,18 +87,23 @@ class Engine(threading.Thread):
             print("using scenic")
 
             self.carla_adapter.init(self.code_file)
-            self.carla_adapter.run()
+
+            # get ego object, run autoware
+            ego_object = self.carla_adapter.get_av_ego()
+            if ego_object is not None:
+                print("scenic has av ego")
+                ego_start_coordinates = ego_object.position.coordinates
+                adapted_ego = AdaptedVehicle(world = self.carla_adapter.world, name = "ego_vehicle")
+                adapted_ego.set_start_position(ego_start_coordinates)
+                adapted_ego.set_random_target()
+                self.autoware_adapter.init()
+                self.autoware_adapter.run(adapted_ego, self.on_ego_state_change, self.on_trace_generated)
+            else:
+                self.carla_adapter.run()
 
                 
 
-            # get ego object, run autoware
-            # ego_object = scene.egoObject
-            # ego_start_coordinates = ego_object.position.coordinates
-            # adapted_ego = AdaptedVehicle(world = self.carla_adapter.world, name = "ego_vehicle")
-            # adapted_ego.set_start_position(ego_start_coordinates)
-            # adapted_ego.set_random_target()
-            # self.autoware_adapter.init()
-            # self.autoware_adapter.run(adapted_ego, self.on_ego_state_change, self.on_trace_generated)
+
 
            
 

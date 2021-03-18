@@ -24,17 +24,31 @@ class ScenicCarlaAdapter(CarlaAdapter):
         self.simulator = scenario.getSimulator()
         self.simulator.render = False
 
+    def get_av_ego(self):
+        for car_object in list(self.scene.objects):
+            if car_object.rolename == "AV_EGO":
+                temp_list = list(self.scene.objects)
+                temp_list.remove(car_object)
+                self.scene.objects = tuple(temp_list)
+                return car_object
+        return None
+
+
     def run(self):
         self.simulate_thread = SimulateThread(self.simulator, self.scene)
         self.simulate_thread.start()
 
     def stop(self):
-        if self.simulate_thread is not None:
-            self.simulate_thread.stop()
-            # self.simulate_thread.join()
-            utils.stop_thread(self.simulate_thread)
-            # super().stop()
-        self.simulate_thread = None
+        try:
+            if self.simulate_thread is not None:
+                self.simulate_thread.stop()
+                # self.simulate_thread.join()
+                utils.stop_thread(self.simulate_thread)
+                # super().stop()
+        except Exception as exception:
+            print("Stop simulator thread error:{}".format(exception))
+        finally:
+            self.simulate_thread = None
 
 class SimulateThread(threading.Thread):
     def __init__(self, simulator, scene):
@@ -46,8 +60,7 @@ class SimulateThread(threading.Thread):
         try:
             self.simulator.simulate(self.scene, verbosity=0)
         except Exception as exception:
-            print("Scenic error:{}".format(exception))
-            return 
+            print("Scenic error:{}".format(exception)) 
 
     def stop(self):
         try:

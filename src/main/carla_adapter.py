@@ -177,7 +177,7 @@ class AdaptedVehicle(AdaptedActor):
         random.shuffle(spawn_points)
         for transform in spawn_points:
             if self.start_transform is not None:
-                if abs(self.start_transform.location.x - transform.location.x) < 10 or abs(self.start_transform.location.y - transform.location.y) < 10:
+                if abs(self.start_transform.location.x - transform.location.x) < 50 or abs(self.start_transform.location.y - transform.location.y) < 50:
                     continue
             self.target_transform = transform
             break
