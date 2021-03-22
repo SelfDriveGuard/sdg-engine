@@ -45,19 +45,13 @@ class Engine(threading.Thread):
         if self.is_load_map:
             print("change map")
             self.carla_adapter.set_map(self.map_name)
+            # 发送状态信息给前端页面
+            self.callback(cmd="STOP", msg="map has load")
             return
         print("engine thread start, thread id = " + str(threading.get_ident()))
         self.start_event.wait()
         print("engine start test")
         self.start_test()
-
-        # # 模拟收到了前端发送的键盘移动指令
-        # i = 0
-        # a = ['key_w', 'key_s', 'key_a', 'key_d', 'drag_r', 'drag_l', 'drag_u', 'drag_d']
-        # while(True):
-        #     time.sleep(10)
-        #     self.carla_adapter.set_spectator_transform(a[i % 8])
-        #     i=i+1
         
         self.stop_event.wait()
         print("caught stop event")
@@ -73,22 +67,14 @@ class Engine(threading.Thread):
         # 前端指令提交代码（直接提交代码没有预加载地图/已经预加载地图）
         try:
             self.ast = driver.Parse(self.code_file)
-        except  IllegalTypeException as typerr:
+        except IllegalTypeException as typerr:
             print (str(typerr))
-            info_msg1 = {
-                'state': 'notRunning',
-                'cmd': 'READY',
-                'msg': str(typerr)
-            }
-            self.callback(info_msg1)
+            # 发送状态信息给前端页面
+            self.callback(cmd="STOP", msg=str(typerr))
         except Exception as err:
             print (str(err))
-            info_msg2 = {
-                'state': 'notRunning',
-                'cmd': 'READY',
-                'msg': str(err)
-            }
-            self.callback(info_msg2)
+            # 发送状态信息给前端页面
+            self.callback(cmd="STOP", msg=str(err))
 
         # 如果想看一眼ast解析结果，可以取消下方注释
         # dumper = ASTDumper(self.ast)
@@ -138,13 +124,8 @@ class Engine(threading.Thread):
         # TODO: use self.trace
         trace_list = self.ast.get_traces()
         self.check_assertion(trace_list)        
-        # 发送assert信息给前端页面
-        assert_msg = {
-            'state': 'notRunning',
-            'cmd': 'ASSERT',
-            'msg': self.assertion
-        }
-        self.callback(assert_msg)
+        # 发送assert状态信息给前端页面
+        self.callback(cmd="ASSERT", msg=self.assertion)
         self.autoware_adapter.send_control_message("trace done")
         # 结束arla_adapter和autoware_adapter
         print("Stoping engine")
@@ -163,12 +144,7 @@ class Engine(threading.Thread):
         if state == "READY":
             print("Ego launched")
             # 发送状态信息给前端页面
-            info_msg = {
-                'state': 'isRunning',
-                'cmd': 'READY',
-                'msg': "Ego launched"
-            }
-            self.callback(info_msg)
+            self.callback(cmd="READY", msg="Ego launched")
 
             self.autoware_adapter.send_control_message("Ego launched outside")
             # Send target
@@ -179,12 +155,7 @@ class Engine(threading.Thread):
             print("Ego start to drive")
             print("Start to create others")
             # 发送状态信息给前端页面
-            info_msg = {
-                'state': 'isRunning',
-                'cmd': 'DRIVING',
-                'msg': "Ego start to drive"
-            }
-            self.callback(info_msg)
+            self.callback(cmd="DRIVING", msg="Ego start to drive")
             self.autoware_adapter.send_control_message("start to drive")  
             # create other elements after EGO has been launched
             if self.current_scenenario.has_npc_vehicles():
@@ -202,12 +173,7 @@ class Engine(threading.Thread):
         elif state == "STOP":
             print("Ego reached")
             # 发送状态信息给前端页面
-            info_msg = {
-                'state': 'notRunning',
-                'cmd': 'STOP',
-                'msg': "Ego reached target"
-            }
-            self.callback(info_msg)
+            self.callback(cmd="STOP",msg="Ego reached target")
             self.autoware_adapter.send_control_message("ego stopped")
             self.stop()
 
