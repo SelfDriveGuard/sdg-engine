@@ -12,7 +12,6 @@ from src.tools import utils
 from src.scenic_parser import parser as scenic_parser
 import numpy as np
 import mtl
-import scenic
 
 
 class Engine(threading.Thread):
