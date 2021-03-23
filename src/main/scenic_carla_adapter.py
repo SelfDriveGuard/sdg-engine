@@ -34,6 +34,8 @@ class ScenicCarlaAdapter(CarlaAdapter):
         return None
 
     def run(self):
+        # debug
+        self.show_info()
         self.simulate_thread = SimulateThread(self.simulator, self.scene)
         self.simulate_thread.start()
 
@@ -48,6 +50,10 @@ class ScenicCarlaAdapter(CarlaAdapter):
             print("Stop simulator thread error:{}".format(exception))
         finally:
             self.simulate_thread = None
+
+    def show_info(self):
+        for obj in self.scene.objects:
+            print("{}:[{}]@{}".format(obj, obj.rolename, obj.position.coordinates))
 
 
 class SimulateThread(threading.Thread):
