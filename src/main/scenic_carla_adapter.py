@@ -45,7 +45,7 @@ class ScenicCarlaAdapter(CarlaAdapter):
                 self.simulate_thread.stop()
                 # self.simulate_thread.join()
                 utils.stop_thread(self.simulate_thread)
-                # super().stop()
+                super().stop()
         except Exception as exception:
             print("Stop simulator thread error:{}".format(exception))
         finally:

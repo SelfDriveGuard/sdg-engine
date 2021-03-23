@@ -84,6 +84,9 @@ class Engine(threading.Thread):
 
     def start_test(self):
 
+        # Spectator
+        self.carla_adapter.set_spectator()
+
         if self.language == "SCENEST":
 
             # 前端指令提交代码（直接提交代码没有预加载地图/已经预加载地图）
@@ -120,6 +123,7 @@ class Engine(threading.Thread):
                     world=self.carla_adapter.world, name="ego_vehicle")
                 adapted_ego.set_start_position(ego_start_coordinates)
                 adapted_ego.set_random_target()
+                print("ego start:{}".format(adapted_ego.start_transform))
                 self.autoware_adapter.init()
                 self.autoware_adapter.run(
                     adapted_ego, self.on_ego_state_change, self.on_trace_generated)

@@ -11,7 +11,6 @@ class ScenestCarlaAdapter(CarlaAdapter):
     def __init__(self, ip_address):
         super().__init__(ip_address)
         self.scenario = None
-        self.actor_list = []
         self.autopilot_batch = []
         self.vehicle_agent_dict = {}
         self.npc_thread = None
@@ -37,10 +36,6 @@ class ScenestCarlaAdapter(CarlaAdapter):
         # npc thread
         if self.npc_thread is not None and self.npc_thread.is_alive():
             utils.stop_thread(self.npc_thread)
-        actor_ids = [x.id for x in self.actor_list]
-        self.client.apply_batch(
-            [carla.command.DestroyActor(x) for x in actor_ids])
-        self.actor_list = []
         self.autopilot_batch = []
         self.vehicle_agent_dict = {}
         self.npc_thread = None

@@ -64,7 +64,7 @@ class AutowareAdapter:
             "z": self.adapted_ego.start_transform.location.z,
             "roll": self.adapted_ego.start_transform.rotation.roll,
             "pitch": self.adapted_ego.start_transform.rotation.pitch,
-            "yaw": self.adapted_ego.start_transform.rotation.yaw
+            "yaw": -self.adapted_ego.start_transform.rotation.yaw# ???
         })
         print("Run command sent")
         print(adapted_ego.info())
