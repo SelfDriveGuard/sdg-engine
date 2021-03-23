@@ -156,23 +156,24 @@ class Engine(threading.Thread):
             print("finish all scenenario_list")
 
     def stop(self):
-        # TODO: use self.trace
-        trace_list = self.ast.get_traces()
-        self.check_assertion(trace_list)        
-        # 发送assert信息给前端页面
-        assert_msg = {
-            'state': 'notRunning',
-            'cmd': 'ASSERT',
-            'msg': self.assertion
-        }
-        self.callback(assert_msg)
-        self.autoware_adapter.send_control_message("trace done")
+        if self.language == "SCENEST":
+            trace_list = self.ast.get_traces()
+            self.check_assertion(trace_list)
+            # 发送assert信息给前端页面
+            assert_msg = {
+                'state': 'notRunning',
+                'cmd': 'ASSERT',
+                'msg': self.assertion
+            }
+            self.callback(assert_msg)
+            self.autoware_adapter.send_control_message("trace done")
+
         # 结束arla_adapter和autoware_adapter
         print("Stoping engine")
         if self.autoware_adapter.ego_has_spawned():
             self.autoware_adapter.stop()
-        self.carla_adapter.stop()
         self.trace = []
+        self.carla_adapter.stop()
 
     # TODO: make message constant
     # state:
@@ -219,18 +220,6 @@ class Engine(threading.Thread):
                 'msg': "Ego reached target"
             }
             self.callback(info_msg)
-            # TODO: use self.trace
-            if self.language == "SCENEST":
-                trace_list = self.ast.get_traces()
-                self.check_assertion(trace_list)
-                # 发送assert信息给前端页面
-                assert_msg = {
-                    'state': 'notRunning',
-                    'cmd': 'ASSERT',
-                    'msg': self.assertion
-                }
-                self.callback(assert_msg)
-                self.autoware_adapter.send_control_message("trace done")
             self.stop()
 
     def on_trace_generated(self, trace):
