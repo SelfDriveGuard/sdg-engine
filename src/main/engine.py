@@ -66,10 +66,22 @@ class Engine(threading.Thread):
         self.start_event.wait()
         print("engine start test")
         self.start_test()
+
+        # # 模拟收到了前端发送的键盘移动指令
+        # i = 0
+        # a = ['key_w', 'key_s', 'key_a', 'key_d', 'drag_r', 'drag_l', 'drag_u', 'drag_d']
+        # while(True):
+        #     time.sleep(10)
+        #     self.carla_adapter.set_spectator_transform(a[i % 8])
+        #     i=i+1
+        
         self.stop_event.wait()
         print("caught stop event")
         self.stop()
         print("kill engine thread")
+
+    def change_view(self, code):       
+        self.carla_adapter.set_spectator_transform(code)
 
     def start_test(self):
 
@@ -126,6 +138,8 @@ class Engine(threading.Thread):
             else:
                 self.carla_adapter.set_map(map_name)
 
+            # Spectator
+            self.carla_adapter.set_spectator()
             # Create NPCs early
             self.carla_adapter.init(self.current_scenenario)
 
@@ -143,6 +157,18 @@ class Engine(threading.Thread):
             print("finish all scenenario_list")
 
     def stop(self):
+        # TODO: use self.trace
+        trace_list = self.ast.get_traces()
+        self.check_assertion(trace_list)        
+        # 发送assert信息给前端页面
+        assert_msg = {
+            'state': 'notRunning',
+            'cmd': 'ASSERT',
+            'msg': self.assertion
+        }
+        self.callback(assert_msg)
+        self.autoware_adapter.send_control_message("trace done")
+        # 结束arla_adapter和autoware_adapter
         print("Stoping engine")
         if self.autoware_adapter.ego_has_spawned():
             self.autoware_adapter.stop()
@@ -213,6 +239,7 @@ class Engine(threading.Thread):
 
     def check_assertion(self, trace_list):
         print("Check Assertion")
+        self.assertion = []
         # trace数据转换
         self.__change_trace_key()
 

@@ -38,13 +38,15 @@ RUN cd /home/sdg/ && \
   cd /home/sdg/sdg-engine/ && \
   python setup.py
 
-ENV CARLA_SERVER_IP localhost
+COPY run.sh /home/sdg/
+
+RUN chmod 777 /home/sdg/run.sh
 
 USER sdg
 
-WORKDIR /home/sdg
+ENV CARLA_SERVER_IP localhost
 
-COPY run.sh /home/sdg/
+WORKDIR /home/sdg
 
 CMD ["./run.sh"]
 

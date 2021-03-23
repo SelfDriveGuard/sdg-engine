@@ -61,7 +61,7 @@ class EngineWebsocket:
 
     async def send_msg(self, msg):
         cmd = msg["cmd"]
-        if cmd == "assert" or cmd == "STOP":
+        if cmd == "ASSERT" or cmd == "STOP":
             self.set_engine_running(False)
         else:
             self.set_engine_running(True)
@@ -146,6 +146,10 @@ async def main(websocket, path):
                 os.remove(input_file)
                 msg = { 'state' : "notRunning"}
                 await websocket.send(json.dumps(msg))
+            elif cmd == "move":
+                print("move test: {}".format(msg['code']))
+                if engine is not None:
+                    engine.change_view(msg['code'])
             else:
                 print("error")
 
