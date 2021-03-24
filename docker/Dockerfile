@@ -40,7 +40,7 @@ RUN cd /home/sdg/ && \
 
 COPY run.sh /home/sdg/
 
-RUN chmod 777 /home/sdg/run.sh
+RUN chmod -R 777 /home/sdg/
 
 USER sdg
 
