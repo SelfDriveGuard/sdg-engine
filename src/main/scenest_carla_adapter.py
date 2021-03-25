@@ -87,8 +87,6 @@ class ScenestCarlaAdapter(CarlaAdapter):
                     t.location for t in adapted_vehicle.path_transform_list]
                 agent.set_many_destinations(destination_list, clean=True)
                 self.vehicle_agent_dict[adapted_vehicle] = agent
-                # set speed
-                adapted_vehicle.set_speed()
             # adapted_vehicle.draw_tips() #debug
             # 维护walker_name变量名与carla中actor.id的对应关系
             self.id_name_map[str(
@@ -329,6 +327,8 @@ class NPCControlThread(threading.Thread):
         self.world = world
 
     def run(self):
+        for adapted_vehicle in list(self.vehicle_agent_dict.keys()):
+            adapted_vehicle.set_speed()
         while True:
             if not self.world.wait_for_tick(10.0):
                 continue

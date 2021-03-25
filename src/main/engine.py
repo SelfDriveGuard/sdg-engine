@@ -39,8 +39,8 @@ class Engine(threading.Thread):
         self.stop_event = stop_event
 
         # TODO: language choose
-        # self.language = "SCENEST"
-        self.language = "SCENIC"
+        self.language = "SCENEST"
+        # self.language = "SCENIC"
 
     def run(self):
         if os.environ.get("CARLA_SERVER_IP") == None:
