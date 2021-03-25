@@ -231,7 +231,7 @@ class ScenestCarlaAdapter(CarlaAdapter):
                 motorbicycles.append(bp)
 
         if npc_ast.has_vehicle_type():
-            blueprint = random.choice(car)
+            blueprint = random.choice(cars)
             if npc_ast.get_vehicle_type().is_specific_type():
                 vehicle_list = self.blueprint_library.filter(
                     npc_ast.get_vehicle_type().get_type().get_value())
