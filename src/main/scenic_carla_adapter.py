@@ -21,6 +21,7 @@ class ScenicCarlaAdapter(CarlaAdapter):
 
     def init(self, scenario):
         self.scene, _ = scenario.generate()
+        # TODO: handle simulator init error
         self.simulator = scenario.getSimulator()
         self.simulator.render = False
 
