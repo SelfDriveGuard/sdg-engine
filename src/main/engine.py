@@ -7,6 +7,7 @@ from src.main.scenic_carla_adapter import ScenicCarlaAdapter
 from src.main.carla_adapter import AdaptedVehicle
 from src.scenest_parser.ast import driver
 from src.scenest_parser.ast.ast import ASTDumper
+from src.scenest_parser.ast.error.error import IllegalTypeException
 from src.scenest_parser.ast.assertion.assertion import AgentVisibleDetectionAssertion, AgentErrorDetectionAssertion, TrafficDetectionAssertion, AgentSafetyAssertion
 from src.tools import utils
 from src.scenic_parser import parser as scenic_parser
@@ -60,19 +61,13 @@ class Engine(threading.Thread):
         if self.is_load_map:
             print("change map")
             self.carla_adapter.set_map(self.map_name)
+            # 发送状态信息给前端页面
+            self.callback(cmd="STOP", msg="map has load")
             return
         print("engine thread start, thread id = " + str(threading.get_ident()))
         self.start_event.wait()
         print("engine start test")
         self.start_test()
-
-        # # 模拟收到了前端发送的键盘移动指令
-        # i = 0
-        # a = ['key_w', 'key_s', 'key_a', 'key_d', 'drag_r', 'drag_l', 'drag_u', 'drag_d']
-        # while(True):
-        #     time.sleep(10)
-        #     self.carla_adapter.set_spectator_transform(a[i % 8])
-        #     i=i+1
         
         self.stop_event.wait()
         print("caught stop event")
@@ -88,19 +83,27 @@ class Engine(threading.Thread):
         self.carla_adapter.set_spectator()
 
         if self.language == "SCENEST":
-
-            # 前端指令提交代码（直接提交代码没有预加载地图/已经预加载地图）
-            self.ast = driver.Parse(self.code_file)
+            try:
+                # 前端指令提交代码（直接提交代码没有预加载地图/已经预加载地图）
+                self.ast = driver.Parse(self.code_file)
+            except IllegalTypeException as typerr:
+                print (str(typerr))
+                # 发送状态信息给前端页面
+                self.callback(cmd="STOP", msg=str(typerr))
+            except Exception as err:
+                print (str(err))
+                # 发送状态信息给前端页面
+                self.callback(cmd="STOP", msg=str(err))
 
             # 如果想看一眼ast解析结果，可以取消下方注释
             # dumper = ASTDumper(self.ast)
             # dumper.dump()
-
-            # get scenenario
-            scenenario_list = self.ast.get_scenarios()
-            self.scenenario_list = scenenario_list
-            self.scenenario_index = -1
-            self.__start_next_scenenario(self.map_name)
+            else:
+                # get scenenario
+                scenenario_list = self.ast.get_scenarios()
+                self.scenenario_list = scenenario_list
+                self.scenenario_index = -1
+                self.__start_next_scenenario(self.map_name)
 
         if self.language == "SCENIC":
             print("using scenic")
@@ -164,13 +167,7 @@ class Engine(threading.Thread):
             trace_list = self.ast.get_traces()
             self.check_assertion(trace_list)
             # 发送assert信息给前端页面
-            assert_msg = {
-                'state': 'notRunning',
-                'cmd': 'ASSERT',
-                'msg': self.assertion
-            }
-            self.callback(assert_msg)
-            self.autoware_adapter.send_control_message("trace done")
+            self.callback(cmd="ASSERT", msg=self.assertion)
 
         # 结束arla_adapter和autoware_adapter
         print("Stoping engine")
@@ -189,12 +186,7 @@ class Engine(threading.Thread):
         if state == "READY":
             print("Ego launched")
             # 发送状态信息给前端页面
-            info_msg = {
-                'state': 'isRunning',
-                'cmd': 'READY',
-                'msg': "Ego launched"
-            }
-            self.callback(info_msg)
+            self.callback(cmd="READY", msg="Ego launched")
 
             self.autoware_adapter.send_control_message("Ego launched outside")
             # Send target
@@ -205,25 +197,16 @@ class Engine(threading.Thread):
             print("Ego start to drive")
             print("Start to create others")
             # 发送状态信息给前端页面
-            info_msg = {
-                'state': 'isRunning',
-                'cmd': 'DRIVING',
-                'msg': "Ego start to drive"
-            }
-            self.callback(info_msg)
-            self.autoware_adapter.send_control_message("start to drive")
+            self.callback(cmd="DRIVING", msg="Ego start to drive")
+            self.autoware_adapter.send_control_message("start to drive")  
             # create other elements after EGO has been launched
             self.carla_adapter.run()
             self.autoware_adapter.send_control_message("others generated")
         elif state == "STOP":
             print("Ego reached")
             # 发送状态信息给前端页面
-            info_msg = {
-                'state': 'notRunning',
-                'cmd': 'STOP',
-                'msg': "Ego reached target"
-            }
-            self.callback(info_msg)
+            self.callback(cmd="STOP",msg="Ego reached target")
+            self.autoware_adapter.send_control_message("ego stopped")
             self.stop()
 
     def on_trace_generated(self, trace):

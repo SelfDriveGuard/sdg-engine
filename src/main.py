@@ -59,27 +59,29 @@ class EngineWebsocket:
     def get_stop_event(self):
         return self.stop_event
 
-    async def send_msg(self, msg):
-        cmd = msg["cmd"]
-        if cmd == "ASSERT" or cmd == "STOP":
-            self.set_engine_running(False)
-        else:
-            self.set_engine_running(True)
-        await self.websocket.send(json.dumps(msg))
+    async def send_msg(self, cmd=None, msg=None):
+        info = {}
+        # 若有cmd，则先相应地更新is_engine_running的取值
+        if cmd:
+            info['cmd'] = cmd
+            if cmd == "ASSERT" or cmd == "STOP":
+                self.set_engine_running(False)
+            else:
+                self.set_engine_running(True)
+        # 若有msg，则向前端发送msg
+        if msg:
+            info['msg'] = msg
+        # state字段取自self.is_engine_running。
+        info['state'] = "isRunning" if self.is_engine_running is True else "notRunning"
+        await self.websocket.send(json.dumps(info))
 
-    def callback(self, msg):
-        asyncio.run(self.send_msg(msg))
+    def callback(self, cmd, msg=None):
+        asyncio.run(self.send_msg(cmd, msg))
 
 async def main(websocket, path):
-        is_running = engine_websocket.is_engine_running
-        msg = {
-            'state': 'notRunning'
-        }
-        if is_running is True :
-            msg["state"] = "isRunning"
-
         engine_websocket.set_websocket(websocket)
-        await websocket.send(json.dumps(msg))
+        # 发送状态信息给前端页面 isRunning/notRunning
+        await engine_websocket.send_msg()
 
         async for data in websocket:
             engine = engine_websocket.get_engine()
@@ -124,16 +126,9 @@ async def main(websocket, path):
                 start_event.set() # 启动
                 engine_websocket.set_engine(engine)
                 engine_websocket.set_engine_running(True)
-                msg = {'state' : "isRunning"}
-                if is_load_map:
-                    engine_websocket.set_engine_running(False)
-                    msg = {'state' : "notRunning",
-                    'cmd' : 'READY',
-                    'msg' : 'map has load'}
-
-                await websocket.send(json.dumps(msg))
+                # 发送状态信息给前端页面 isRunning/notRunning
+                await engine_websocket.send_msg()
                 print("engine started")
-            
             elif cmd == "stop":
                 print("stop test")
                 if engine is not None:
@@ -144,8 +139,11 @@ async def main(websocket, path):
                 engine_websocket.set_load_map(False)
                 engine_websocket.set_engine_running(False)
                 os.remove(input_file)
-                msg = { 'state' : "notRunning"}
-                await websocket.send(json.dumps(msg))
+                # 发送状态信息给前端页面 isRunning/notRunning
+                await engine_websocket.send_msg()
+            elif cmd == "query":
+                # 发送状态信息给前端页面 isRunning/notRunning
+                await engine_websocket.send_msg()
             elif cmd == "move":
                 print("move test: {}".format(msg['code']))
                 if engine is not None:
