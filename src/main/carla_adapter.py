@@ -278,7 +278,7 @@ class AdaptedPedestrian(AdaptedActor):
 
     def start_ai_walk(self):
         if self.carla_actor is not None:
-            walker_controller_bp = self.blueprint_library.find(
+            walker_controller_bp = self.world.get_blueprint_library().find(
                 'controller.ai.walker')
             try:
                 ai_wakler = self.world.spawn_actor(
