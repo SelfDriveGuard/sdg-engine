@@ -146,7 +146,7 @@ class AdaptedActor:
 
     def set_middle_positions(self, positions, position_type="COORDINATE"):
         for position in positions:
-            transform = self.target_transform = self.__get_valid_transform(
+            transform  = self.__get_valid_transform(
                 position, position_type)
             self._middle_transforms.append(transform)
 
