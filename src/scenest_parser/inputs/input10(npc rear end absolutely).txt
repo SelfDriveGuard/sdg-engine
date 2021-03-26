@@ -1,0 +1,73 @@
+// demo1.scenest demonstrates a rear-end collision between npc and ego, with the assertion of this collision.
+// This script specifies a safety_assertion. During the time period when the safety_assertion takes effect, npc1 should be within the perceptual range, and the perceptual error should be less than the threshold, and the distance between ego and npc should not be less than 1.1 meters.
+// During the simulation, npc1 will rear-end the ego vehicle from the rear at a pace of 10. User can view the real-time map and the image of ego vehicle camera through the three windows on the right side of the webpage. When the collision occurs, the simulation ends, and the collision error will be reported in the "Assert key point" area at the bottom of the webpage.
+
+map = "Town03";
+
+// ego car
+ego_init_position = (109, 62.48); //default coordinate frame is ENU
+ego_target_position = (165, 62.48); //default coordinate frame is ENU
+ego_init_state = (ego_init_position);
+ego_target_state = (ego_target_position);
+
+car_model = "Lincoln MKZ 2017";
+car_color = (255, 0, 0);
+vehicle_type = (car_model, car_color);
+ego_vehicle = AV(ego_init_state, ego_target_state, vehicle_type);
+
+// npc car
+npc1_init_state = ((99, 62.48), ,8); 	// start
+npc1_waypoint = ((109, 62.48));
+npc1_target_state = ((130, 62.48)); 	// target
+npc1_waypoints = (npc1_waypoint);
+npc1 = Vehicle(npc1_init_state, Waypoint(npc1_waypoints), npc1_target_state, ("vehicle.mini.cooperst", (100,100,100)));
+
+// npc 2: move along given waypoints
+npc2_init_state = ("52.-1"->5.0, ,5.0); 	// start
+npc2_waypoints = (("52.-1"->5.0, , 0.0), ("52.1"->2.0, ,1.0));
+npc2_target_state = ("52.1"->2.0, ,0.0); 	// target
+npc2 = Vehicle(npc2_init_state, Waypoint(npc2_waypoints), npc2_target_state, vehicle_type);
+
+// npc 3: static vehicle
+npc3 = Vehicle(("75.-1"->0.0, ,0.0), , ("494.-1"->1.0, ,0.0));
+
+npcs = {npc1,npc2,npc3};
+
+// pedestrian
+pedestrian_type = (1.65, black);
+pedestrian1 = Pedestrian(((-15.9, 110), ,0.5), , ((-56, 123), ,0), pedestrian_type);
+pedestrian2 = Pedestrian(((101, 62), ,0.5), , ((120, 144), ,0), pedestrian_type);
+pedestrians = {pedestrian1, pedestrian2};
+
+// env
+time = 10:00;
+weather = {rain: 0.1};
+env = Environment(time, weather);
+
+// traffic requirements
+speed_range = (0, 20);
+speed_limit = SpeedLimit("52.-1", speed_range);
+intersection = Intersection(1, 1, 0, 1);
+traffic = {intersection, speed_limit};
+
+scenario = CreateScenario{load(map);
+			        ego_vehicle;
+			        npcs;
+			        pedestrians;
+			        {};
+			        env;
+			        traffic;
+};
+
+Trace trace = EXE(scenario);
+
+ego_state = trace[1][ego];
+npc1_perception = trace[1][perception][npc1];
+npc1_state = trace[1][truth][npc1];
+
+distance = dis(ego_state, npc1_state);
+error = diff(npc1_perception, npc1_state);
+perception_detection = distance <= 0.3 & error <= 0.4;
+safety_assertion = distance <= 30 & error <= 40 & dis(ego_state, npc1_perception) >= 1.1;
+trace |=G perception_detection;
+trace |=G safety_assertion;
