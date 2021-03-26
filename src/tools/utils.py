@@ -57,7 +57,7 @@ def get_xyz_by_mixed_laneid(map, mixed_lane_id, length):
     return [float(location.x), float(location.y), float(location.z)]
 
 # MTL的dis
-def dis(ego_vehicle_state, npc_vehicle_ground):
+def dis(npc_vehicle_ground):
     # 从autoreare中收集的的关于npc、pedestrian的坐标都是相对于ego的相对坐标
     # npc从ego后方/前方/侧方撞击，应考虑ego车的bounding_box、ego车上的雷达相对于ego的位置
     ego_width = 2   #ego车宽
