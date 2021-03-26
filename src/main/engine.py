@@ -39,8 +39,8 @@ class Engine(threading.Thread):
         self.stop_event = stop_event
 
         # TODO: language choose
-        # self.language = "SCENEST"
-        self.language = "SCENIC"
+        self.language = "SCENEST"
+        # self.language = "SCENIC"
 
     def run(self):
         if os.environ.get("CARLA_SERVER_IP") == None:
@@ -418,8 +418,7 @@ class Engine(threading.Thread):
             # 防止出现：trace_time指定为从0开始，但trace_modified的第一个时间戳晚于0
             if item['time'] >= trace_time and dis_agent_ground in item['truth'] and diff_agent_state in item['perception'] and diff_agent_ground in item['truth']:
                 # dis
-                trace_mtl['a'].append((item['time'], utils.dis(
-                    item['ego'][0], item['truth'][dis_agent_ground][0]) <= sensing_range))
+                trace_mtl['a'].append((item['time'], utils.dis(item['truth'][dis_agent_ground][0]) <= sensing_range))
                 # diff
                 trace_mtl['b'].append((item['time'], utils.diff(
                     item['perception'][diff_agent_state], item['truth'][diff_agent_ground]) <= error_threshold))
@@ -500,14 +499,12 @@ class Engine(threading.Thread):
             # 防止出现：trace_time指定为从0开始，但trace_modified的第一个时间戳晚于0
             if item['time'] >= trace_time and dis_agent_ground in item['truth'] and diff_agent_state in item['perception'] and diff_agent_ground in item['truth'] and safety_agent_state in item['perception']:
                 # dis
-                trace_mtl['a'].append((item['time'], utils.dis(
-                    item['ego'][0], item['truth'][dis_agent_ground][0]) <= sensing_range))
+                trace_mtl['a'].append((item['time'], utils.dis(item['truth'][dis_agent_ground][0]) <= sensing_range))
                 # diff
                 trace_mtl['b'].append((item['time'], utils.diff(
                     item['perception'][diff_agent_state], item['truth'][diff_agent_ground]) <= error_threshold))
                 # SafetyAssertion
-                trace_mtl['c'].append((item['time'], utils.dis(
-                    item['ego'][0], item['perception'][safety_agent_state][0]) >= safety_radius))
+                trace_mtl['c'].append((item['time'], utils.dis(item['perception'][safety_agent_state][0]) >= safety_radius))
 
         # 若trace中没有提取出与用户订阅相匹配的数据，则返回true
         for item in trace_mtl:

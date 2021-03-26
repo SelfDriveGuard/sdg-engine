@@ -57,16 +57,30 @@ def get_xyz_by_mixed_laneid(map, mixed_lane_id, length):
     return [float(location.x), float(location.y), float(location.z)]
 
 # MTL的dis
-def dis(ego_vehicle_state, npc_vehicle1_ground):
-    dx = ego_vehicle_state[0] - npc_vehicle1_ground[0]
-    dy = ego_vehicle_state[1] - npc_vehicle1_ground[1]
-    d1 = np.sqrt(np.square(dx)+np.square(dy))
-    return d1
+def dis(npc_vehicle_ground):
+    # 从autoreare中收集的的关于npc、pedestrian的坐标都是相对于ego的相对坐标
+    # npc从ego后方/前方/侧方撞击，应考虑ego车的bounding_box、ego车上的雷达相对于ego的位置
+    ego_width = 2   #ego车宽
+    ego_length = 4.54   #ego车长
+    sensor_x = 2    #ego车上sensor相对于车左上角的x轴偏移
+    sensor_y = 0    #ego车上sensor相对于车左上角的y轴偏移
+    # 从前方撞击
+    if npc_vehicle_ground[0] > 0:
+        dx = npc_vehicle_ground[0] - sensor_y
+    # 从后方撞击
+    else:
+        dx = - sensor_y - npc_vehicle_ground[0] - ego_length
+    # 侧方撞击
+    dy = abs(sensor_x - npc_vehicle_ground[1] - ego_width)
+    return max(dx, dy)
 
 # MTL的diff
 def diff(perception, ground):
-    e = 0.1*dis(perception[0], ground[0]) + 0.1*dis(perception[1], ground[1]) + 0.1*dis(perception[2], ground[2])
-    return e
+    pos_diff = np.linalg.norm(np.array(perception[0]) - np.array(ground[0]))
+    heading_diff = np.linalg.norm(np.array(perception[1]) - np.array(ground[1]))
+    velocity_diff = np.linalg.norm(np.array(perception[2]) - np.array(ground[2]))   
+    difference = (pos_diff + heading_diff + velocity_diff)/3
+    return difference
 
 # MTL 找出assertion发生的时间点
 def get_assertion_timestamp(assertion_list):
