@@ -16,7 +16,7 @@ import mtl
 
 
 class Engine(threading.Thread):
-    def __init__(self, code_file, callback, map_name=None, is_load_map=False, start_event=None, stop_event=None):
+    def __init__(self, code_file, callback, map_name=None,language='scenest', is_load_map=False, start_event=None, stop_event=None):
         threading.Thread.__init__(self)
         self.code_file = code_file
         self.carla_adapter = None
@@ -38,9 +38,9 @@ class Engine(threading.Thread):
         self.start_event = start_event
         self.stop_event = stop_event
 
-        # TODO: language choose
-        self.language = "SCENEST"
-        # self.language = "SCENIC"
+        # set language
+        self.language = language
+        print("Using {}".format(self.language))
 
     def run(self):
         if os.environ.get("CARLA_SERVER_IP") == None:
@@ -50,10 +50,10 @@ class Engine(threading.Thread):
         self.autoware_adapter = autoware_adapter.AutowareAdapter(
             os.environ.get("ROS_BRIDGE_IP"))
 
-        if self.language == "SCENEST":
+        if self.language == "scenest":
             self.carla_adapter = ScenestCarlaAdapter(
                 os.environ.get("CARLA_SERVER_IP"))
-        if self.language == "SCENIC":
+        if self.language == "scenic":
             self.carla_adapter = ScenicCarlaAdapter(
                 os.environ.get("CARLA_SERVER_IP"))
 
@@ -82,7 +82,7 @@ class Engine(threading.Thread):
         # Spectator
         self.carla_adapter.set_spectator()
 
-        if self.language == "SCENEST":
+        if self.language == "scenest":
             try:
                 # 前端指令提交代码（直接提交代码没有预加载地图/已经预加载地图）
                 self.ast = driver.Parse(self.code_file)
@@ -105,7 +105,7 @@ class Engine(threading.Thread):
                 self.scenenario_index = -1
                 self.__start_next_scenenario(self.map_name)
 
-        if self.language == "SCENIC":
+        if self.language == "scenic":
             print("using scenic")
 
             params = {}
@@ -163,7 +163,7 @@ class Engine(threading.Thread):
             print("finish all scenenario_list")
 
     def stop(self):
-        if self.language == "SCENEST":
+        if self.language == "scenest":
             trace_list = self.ast.get_traces()
             self.check_assertion(trace_list)
             # 发送assert信息给前端页面
