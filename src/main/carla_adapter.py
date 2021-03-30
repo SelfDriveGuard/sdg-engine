@@ -3,8 +3,6 @@ import random
 import carla
 import math
 
-# TODO: (optimize)reduce the usage of world.get_map()
-
 
 class CarlaAdapter:
     def __init__(self, ip_address):
@@ -83,31 +81,36 @@ class CarlaAdapter:
         self.spectator.set_transform(transform)
         print(transform)
         print("Sensor location: --")
-    
+
     # 处理WASD键的前后左右移动
 
     def get_transform_offset(self, x=0, y=0, z=0):
-        #角度转弧度
-        pitch_radius = math.radians(self.spectator.get_transform().rotation.pitch) #y
-        yaw_radius = math.radians(-self.spectator.get_transform().rotation.yaw)  #z
-        #绕y轴旋转
+        # 角度转弧度
+        pitch_radius = math.radians(
+            self.spectator.get_transform().rotation.pitch)  # y
+        # z
+        yaw_radius = math.radians(-self.spectator.get_transform().rotation.yaw)
+        # 绕y轴旋转
         x_1 = x * math.cos(pitch_radius) - z * math.sin(pitch_radius)
         z_1 = x * math.sin(pitch_radius) + z * math.cos(pitch_radius)
         y_1 = y
-        #绕z轴旋转
+        # 绕z轴旋转
         y_2 = y_1 * math.cos(yaw_radius) - x_1 * math.sin(yaw_radius)
         x_2 = y_1 * math.sin(yaw_radius) + x_1 * math.cos(yaw_radius)
-        z_2 = z_1          
-        #根据偏移，设置位置
-        location = carla.Location(x_2, y_2, z_2) + self.spectator.get_location()
-        transform = carla.Transform(location, self.spectator.get_transform().rotation)
+        z_2 = z_1
+        # 根据偏移，设置位置
+        location = carla.Location(x_2, y_2, z_2) + \
+            self.spectator.get_location()
+        transform = carla.Transform(
+            location, self.spectator.get_transform().rotation)
         return transform
-    
+
     # 处理鼠标拖拽左右拖拽（yaw）和上下拖拽（pitch）
 
     def get_transform_drag(self, angleX=0, angleY=0):
         origin_rotation = self.spectator.get_transform().rotation
-        rotation = carla.Rotation(yaw=angleX + origin_rotation.yaw, pitch=angleY + origin_rotation.pitch, roll=origin_rotation.roll)
+        rotation = carla.Rotation(yaw=angleX + origin_rotation.yaw,
+                                  pitch=angleY + origin_rotation.pitch, roll=origin_rotation.roll)
         transform = carla.Transform(self.spectator.get_location(), rotation)
         return transform
 
@@ -127,6 +130,7 @@ class CarlaAdapter:
 class AdaptedActor:
     def __init__(self, world, name=None, blueprint=None, actor_type="Vehicle"):
         self.world = world
+        self.map = self.world.get_map()
         self.carla_actor = None
         self.name = name
         self.blueprint = blueprint
@@ -146,7 +150,7 @@ class AdaptedActor:
 
     def set_middle_positions(self, positions, position_type="COORDINATE"):
         for position in positions:
-            transform  = self.__get_valid_transform(
+            transform = self.__get_valid_transform(
                 position, position_type)
             self._middle_transforms.append(transform)
 
@@ -170,19 +174,19 @@ class AdaptedActor:
 
     def __get_waypoint_by_location(self, location):
         if self.actor_type == "Vehicle":
-            waypoint = self.world.get_map().get_waypoint(
+            waypoint = self.map.get_waypoint(
                 location, lane_type=carla.LaneType.Driving)
         elif self.actor_type == "Pedestrian":
-            waypoint = self.world.get_map().get_waypoint(
+            waypoint = self.map.get_waypoint(
                 location, lane_type=carla.LaneType.Sidewalk)
         else:
             print("Error:wrong actor type")
-            waypoint = self.world.get_map().get_waypoint(location)
+            waypoint = self.map.get_waypoint(location)
         return waypoint
 
     def __get_waypoint_by_mixed_laneid(self, road_id, lane_id, length):
         # road_id, lane_id = mixed_lane_id.split('.')
-        waypoint = self.world.get_map().get_waypoint_xodr(
+        waypoint = self.map.get_waypoint_xodr(
             int(road_id), int(lane_id), length)
         return waypoint
 
@@ -260,7 +264,7 @@ class AdaptedVehicle(AdaptedActor):
             self.carla_actor.enable_constant_velocity(carla.Vector3D(0, 0, 0))
 
     def set_random_target(self):
-        spawn_points = self.world.get_map().get_spawn_points()
+        spawn_points = self.map.get_spawn_points()
         random.shuffle(spawn_points)
         for transform in spawn_points:
             if self.start_transform is not None:
@@ -268,8 +272,6 @@ class AdaptedVehicle(AdaptedActor):
                     continue
             self.target_transform = transform
             break
-
-            
 
 
 class AdaptedPedestrian(AdaptedActor):
