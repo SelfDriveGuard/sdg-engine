@@ -54,6 +54,6 @@ ego = Car following roadDirection from other for INITIAL_DISTANCE_APART,
 
 start = OrientedPoint on lane.centerline
 
-av_ego = Car at start,
+av_ego = Car at start offset along roadDirection by 0 @ 7 ,
 		with rolename "AV_EGO",
 		with behavior FollowLaneBehavior(10)
