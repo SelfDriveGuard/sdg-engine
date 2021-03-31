@@ -1,7 +1,7 @@
 """ Scenario Description
-Voyage OAS Scenario Unique ID: 2-2-XX-CF-STR-CAR:Pa>E:03
-The car ahead of ego that is badly parked over the sidewalk cuts into ego vehicle's lane.
-This scenario may fail if there exists any obstacle (e.g. fences) on the sidewalk 
+Background Activity
+The simulation is filled with vehicles that freely roam around the town.
+This simulates normal driving conditions, without any abnormal behaviors
 """
 
 #SET MAP AND MODEL (i.e. definitions of all referenceable vehicle types, road library, etc)

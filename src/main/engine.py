@@ -121,7 +121,9 @@ class Engine(threading.Thread):
             ego_object = self.carla_adapter.get_av_ego()
             if ego_object is not None:
                 print("scenic has av ego")
-                ego_start_coordinates = ego_object.position.coordinates
+                ego_start_coordinates = list(ego_object.position.coordinates)
+                # TODO: fix y-axis problem: scenic use opposite y
+                ego_start_coordinates[1] = -ego_start_coordinates[1]
                 adapted_ego = AdaptedVehicle(
                     world=self.carla_adapter.world, name="ego_vehicle")
                 adapted_ego.set_start_position(ego_start_coordinates)
