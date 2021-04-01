@@ -1,0 +1,19 @@
+site_name: SelfDriveGuard
+repo_url: https://github.com/SelfDriveGuard/sdg-engine
+docs_dir: docs
+
+theme: readthedocs
+
+
+nav:
+- Home: 'index.md'
+- Getting started:
+  - 'Introduction': 'setup/build.md'
+  - 'Quick start installation': 'setup/docker.md'
+- Setup:
+  - 'Prerequisites': 'setup/setup.md'
+  - 'Port requirement': '端口分配.md'
+  - 'Naming strategy': '命名规范.md'
+
+markdown_extensions:
+  - admonition
