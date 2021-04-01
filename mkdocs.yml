@@ -6,13 +6,12 @@ theme: readthedocs
 
 
 nav:
+- Home: 'index.md'
 - Getting started:
-  - 'Introduction': 'setup/build.md'
-  - 'Quick start installation': 'setup/docker.md'
-- Setup:
-  - 'Prerequisites': 'setup/setup.md'
-  - 'Port requirement': '端口分配.md'
-  - 'Naming strategy': '命名规范.md'
+  - 'Introduction': 'start_introduction.md'
+  - 'Setup': 'setup/setup.md'
+- Contributing:
+  - 'coding_standard': 'coding_standard.md'
 
 markdown_extensions:
   - admonition
