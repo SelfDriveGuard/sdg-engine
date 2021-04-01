@@ -16,7 +16,7 @@ import mtl
 
 
 class Engine(threading.Thread):
-    def __init__(self, code_file, callback, map_name=None,language='scenest', is_load_map=False, start_event=None, stop_event=None):
+    def __init__(self, code_file, callback, map_name=None,language='scenest', time_limit=-1, is_load_map=False, start_event=None, stop_event=None):
         threading.Thread.__init__(self)
         self.code_file = code_file
         self.carla_adapter = None
@@ -32,7 +32,7 @@ class Engine(threading.Thread):
         self.callback = callback
 
         # time limit
-        self.time = 10
+        self.time = time_limit
         self.time_count_thread = None
 
         self.map_name = map_name
