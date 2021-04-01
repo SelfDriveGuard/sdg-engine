@@ -7,6 +7,7 @@ import asyncio
 
 ros = None
 
+
 class AutowareAdapter:
     def __init__(self, ip):
         self.adapted_ego = None
@@ -21,13 +22,13 @@ class AutowareAdapter:
             self.ros_client = roslibpy.Ros(host=ip, port=9090)
             self.ros_client.run()
             ros = self.ros_client
-        
+
         #self.ros_client = roslibpy.Ros(host=ip, port=9090)
         #print('Is ROS connected?', self.ros_client.is_connected)
         # 关闭或终止都会导致下次无法通过run建立连接，所以连接不断开
       #  if self.ros_client.is_connected is False:
           #  self.ros_client.run()
-        
+
         print('Is ROS connected?', self.ros_client.is_connected)
         # use websocket to control
         self.ws_uri = "ws://{}:9091".format(ip)
@@ -63,7 +64,7 @@ class AutowareAdapter:
             "z": self.adapted_ego.start_transform.location.z,
             "roll": self.adapted_ego.start_transform.rotation.roll,
             "pitch": self.adapted_ego.start_transform.rotation.pitch,
-            "yaw": self.adapted_ego.start_transform.rotation.yaw
+            "yaw": -self.adapted_ego.start_transform.rotation.yaw# ???
         })
         print("Run command sent")
         print(adapted_ego.info())
@@ -93,8 +94,11 @@ class AutowareAdapter:
     def stop(self):
         self.send_control_message("ready to stop")
 
-        self.trace_listener.unsubscribe()
-        self.state_listener.unsubscribe()
+        try:
+            self.trace_listener.unsubscribe()
+            self.state_listener.unsubscribe()
+        except Exception as exception:
+            print(exception)
 
         self.send_control_message("stop")
         print("Stop sent")
@@ -102,13 +106,15 @@ class AutowareAdapter:
         self.EGO_LAUNCH_FLAG = False
         self.TARGET_SEND_FLAG = False
         self.EGO_REACH_FLAG = False
-        #self.ros_client.terminate()
-        #self.ros_client.close()
+        # self.ros_client.terminate()
+        # self.ros_client.close()
         self.trace = []
 
     def ego_has_spawned(self):
         # judge whether the EGO has been created
         # by role_name set by launch config file
+        if self.adapted_ego is None:
+            return False
         for actor in self.adapted_ego.world.get_actors():
             if actor.type_id.split(".")[0] == "vehicle":
                 if actor.attributes['role_name'] == "ego_vehicle":
@@ -165,7 +171,7 @@ class AutowareAdapter:
 
         result = self.ros_manager.call(request, timeout=10)
 
-        print("[{}]:{}".format(cmd,result))
+        print("[{}]:{}".format(cmd, result))
 
     def send_control_message(self, cmd, data={'data': None}):
         msg = json.dumps(
@@ -174,8 +180,8 @@ class AutowareAdapter:
                 "data": data
             }
         )
-        #self.send_to_ws(msg)
-        #asyncio.create_task(self.send_to_ws(msg))
+        # self.send_to_ws(msg)
+        # asyncio.create_task(self.send_to_ws(msg))
         asyncio.run(self.send_to_ws(msg))
 
     async def send_to_ws(self, msg):
