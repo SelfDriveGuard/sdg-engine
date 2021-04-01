@@ -201,10 +201,8 @@ class Engine(threading.Thread):
             # 发送状态信息给前端页面
             self.callback(cmd="READY", msg="Ego launched")
 
-            self.autoware_adapter.send_control_message("Ego launched outside")
             # Send target
             self.autoware_adapter.send_target()
-            self.autoware_adapter.send_control_message("target sent outside")
             print("[Wait]Checking target...")
         elif state == "DRIVING":
             print("Ego start to drive")
