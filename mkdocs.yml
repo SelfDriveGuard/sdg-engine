@@ -6,7 +6,6 @@ theme: readthedocs
 
 
 nav:
-- Home: 'index.md'
 - Getting started:
   - 'Introduction': 'setup/build.md'
   - 'Quick start installation': 'setup/docker.md'
