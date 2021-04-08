@@ -12,11 +12,11 @@ RUN apt-get update && \
 RUN apt-get install -y software-properties-common && \
   apt-get install -y software-properties-common && \
   add-apt-repository ppa:deadsnakes/ppa && \
-  apt-get install -y python3.7
+  apt-get install -y python3.8
 
 RUN mv /usr/bin/python3 /usr/bin/python3.bak && \
-  ln -s /usr/bin/python3.7 /usr/bin/python3 && \
-  ln -s /usr/bin/python3.7 /usr/bin/python
+  ln -s /usr/bin/python3.8 /usr/bin/python3 && \
+  ln -s /usr/bin/python3.8 /usr/bin/python
 
 RUN apt-get install -y python3-pip && \
   ln -s /usr/bin/pip3 /usr/bin/pip
@@ -27,7 +27,8 @@ RUN pip install --upgrade "requests==2.25.1" && \
   pip install --upgrade "networkx==2.5" && \
   pip install --upgrade "antlr4-python3-runtime==4.8.0" && \
   pip install --upgrade "roslibpy==1.1.0" && \
-  pip install --upgrade "metric-temporal-logic==0.2.2"
+  pip install --upgrade "metric-temporal-logic==0.2.2" && \
+  pip install --upgrade "scenic==^2.0.0"
 
 RUN apt update && \
   apt install -y git libxerces-c3.2 libjpeg8 libtiff5 iputils-ping
