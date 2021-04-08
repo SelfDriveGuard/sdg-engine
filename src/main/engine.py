@@ -16,7 +16,7 @@ import mtl
 
 
 class Engine(threading.Thread):
-    def __init__(self, code_file, callback, map_name=None,language='scenest', is_load_map=False, start_event=None, stop_event=None):
+    def __init__(self, code_file, callback, map_name=None,language='scenest', time_limit=-1, is_load_map=False, start_event=None, stop_event=None):
         threading.Thread.__init__(self)
         self.code_file = code_file
         self.carla_adapter = None
@@ -30,6 +30,10 @@ class Engine(threading.Thread):
         self.ast = None
         self.assertion = []
         self.callback = callback
+
+        # time limit
+        self.time = time_limit
+        self.time_count_thread = None
 
         self.map_name = map_name
         self.is_load_map = is_load_map
@@ -165,6 +169,11 @@ class Engine(threading.Thread):
             print("finish all scenenario_list")
 
     def stop(self):
+        if self.time_count_thread is not None:
+            self.time_count_thread.cancel()
+        # 发送状态信息给前端页面
+        self.callback(cmd="STOP",msg="Ego reached target")
+
         if self.language == "scenest":
             trace_list = self.ast.get_traces()
             self.check_assertion(trace_list)
@@ -175,8 +184,10 @@ class Engine(threading.Thread):
         print("Stoping engine")
         if self.autoware_adapter.ego_has_spawned():
             self.autoware_adapter.stop()
-        self.trace = []
         self.carla_adapter.stop()
+        self.trace = []
+        self.time = -1
+        self.time_count_thread = None
 
     # TODO: make message constant
     # state:
@@ -190,25 +201,23 @@ class Engine(threading.Thread):
             # 发送状态信息给前端页面
             self.callback(cmd="READY", msg="Ego launched")
 
-            self.autoware_adapter.send_control_message("Ego launched outside")
             # Send target
             self.autoware_adapter.send_target()
-            self.autoware_adapter.send_control_message("target sent outside")
             print("[Wait]Checking target...")
         elif state == "DRIVING":
             print("Ego start to drive")
             print("Start to create others")
             # 发送状态信息给前端页面
             self.callback(cmd="DRIVING", msg="Ego start to drive")
-            self.autoware_adapter.send_control_message("start to drive")  
+            # check time limit
+            if self.time > 0:
+                print("Time limit:{}s".format(self.time))
+                self.time_count_thread = threading.Timer(interval = self.time, function = self.stop)
+                self.time_count_thread.start()
             # create other elements after EGO has been launched
             self.carla_adapter.run()
-            self.autoware_adapter.send_control_message("others generated")
         elif state == "STOP":
             print("Ego reached")
-            # 发送状态信息给前端页面
-            self.callback(cmd="STOP",msg="Ego reached target")
-            self.autoware_adapter.send_control_message("ego stopped")
             self.stop()
 
     def on_trace_generated(self, trace):
