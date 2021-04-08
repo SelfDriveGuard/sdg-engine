@@ -99,6 +99,7 @@ async def main(websocket, path):
                 map_name = msg['map_name'] if 'map_name' in msg else None
                 is_load_map = msg['is_load_map'] if 'is_load_map' in msg else False
                 language = msg['lang'] if 'lang' in msg else "scenest"
+                time_limit = msg['time'] if 'time' in msg else -1
                 
                 # 1. engine == None 通过
                 # 2. engine 不为空，
@@ -122,7 +123,7 @@ async def main(websocket, path):
                 start_event.clear() # 重置状态
                 stop_event.clear() 
                 # 新线程中运行engine
-                engine = Engine(input_file, engine_websocket.callback, map_name, language, is_load_map, start_event, stop_event)
+                engine = Engine(input_file, engine_websocket.callback, map_name, language, time_limit, is_load_map, start_event, stop_event)
                 engine.start()
                 start_event.set() # 启动
                 engine_websocket.set_engine(engine)
