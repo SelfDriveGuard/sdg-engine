@@ -84,7 +84,7 @@ class Engine(threading.Thread):
     def start_test(self):
 
         # Spectator
-        self.carla_adapter.set_spectator()
+        # self.carla_adapter.set_spectator()
 
         if self.language == "scenest":
             try:
@@ -120,7 +120,9 @@ class Engine(threading.Thread):
             scenario = scenic_parser.parse(self.code_file, params)
 
             self.carla_adapter.init(scenario)
-
+            # Spectator
+            self.carla_adapter.set_spectator()
+            
             # get ego object, run autoware
             ego_object = self.carla_adapter.get_av_ego()
             if ego_object is not None:
