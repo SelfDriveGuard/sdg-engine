@@ -28,7 +28,7 @@ RUN pip install --upgrade "requests==2.25.1" && \
   pip install --upgrade "antlr4-python3-runtime==4.8.0" && \
   pip install --upgrade "roslibpy==1.1.0" && \
   pip install --upgrade "metric-temporal-logic==0.2.2" && \
-  pip install --upgrade "scenic==^2.0.0"
+  pip install --upgrade "scenic==2.0.0"
 
 RUN apt update && \
   apt install -y git libxerces-c3.2 libjpeg8 libtiff5 iputils-ping
