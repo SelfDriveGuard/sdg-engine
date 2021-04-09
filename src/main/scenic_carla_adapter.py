@@ -7,20 +7,18 @@ from src.tools import utils
 class ScenicCarlaAdapter(CarlaAdapter):
     def __init__(self, ip_address):
         super().__init__(ip_address)
-        # self.params = {}
-        # self.params["address"] = ip_address
-        # # TODO: remove
-        # self.params["carla_map"] = carla_map
         self.scene = None
         self.simulator = None
         self.simulate_thread = None
 
-    # def set_map(self, map):
-    #     super().set_map(map)
-        # self.params["carla_map"] = map
-
-    def init(self, scenario):
+    def init(self, scenario, map_name):
         self.scene, _ = scenario.generate()
+        # set map before simulator is created
+        if not map_name:
+            super().set_map(
+                self.scene.params["carla_map"])
+        else:
+            super().set_map(map_name)
         # TODO: handle simulator init error
         self.simulator = scenario.getSimulator()
         self.simulator.render = False
