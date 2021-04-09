@@ -4,16 +4,16 @@
 
 ```
 # pull carlaviz
-sudo docker pull selfdriveguard/carlaviz:tagname
+docker pull selfdriveguard/carlaviz:tagname
 
 # pull 执行引擎
-sudo docker pull selfdriveguard/sdg-engine:tagname
+docker pull selfdriveguard/sdg-engine:tagname
 
 # pull sdg-frontend
-# sudo docker pull selfdriveguard/sdg-frontend:tagname
+docker pull selfdriveguard/sdg-frontend:tagname
 
 # pull sdg-backend
-# sudo docker pull selfdriveguard/sdg-backend:tagname
+docker pull selfdriveguard/sdg-backend:tagname
 
 # build carla-autoware
 git clone --recurse-submodules git@github.com:SelfDriveGuard/carla-autoware.git
