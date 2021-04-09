@@ -7,22 +7,19 @@
 1. 安装环境依赖
 
 ```
-#  安装python3.7以及虚拟环境
-sudo apt install python3.7
-sudo update-alternatives --install /usr/bin/python python /usr/bin/python3.7 5
-sudo apt install python3.7-venv
+#  安装python3.8以及虚拟环境
+sudo apt install python3.8
+sudo update-alternatives --install /usr/bin/python python /usr/bin/python3.8 5
+sudo apt install python3.8-venv
 
 # 安装pip
 curl https://bootstrap.pypa.io/get-pip.py -o get-pip.py   # 下载安装脚本
-sudo apt-get install python3.7-distutils
-sudo python3.7 get-pip.py 
-
-#安装pipx
-python3.7 -m pip install --user pipx 
-python3.7 -m pipx ensurepath
+sudo apt-get install python3.8-distutils
+sudo python get-pip.py
+sudo pip install --upgrade keyrings.alt
 
 # 安装poetry
-pipx install poetry --force 
+sudo pip install poetry --force 
 
 # 安装第三方依赖
 sudo apt install libxerces-c3.2
