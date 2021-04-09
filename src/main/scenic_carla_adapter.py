@@ -7,23 +7,26 @@ from src.tools import utils
 class ScenicCarlaAdapter(CarlaAdapter):
     def __init__(self, ip_address):
         super().__init__(ip_address)
-        # self.params = {}
-        # self.params["address"] = ip_address
-        # # TODO: remove
-        # self.params["carla_map"] = carla_map
         self.scene = None
         self.simulator = None
         self.simulate_thread = None
 
-    # def set_map(self, map):
-    #     super().set_map(map)
-        # self.params["carla_map"] = map
-
-    def init(self, scenario):
+    def init(self, scenario, map_name):
         self.scene, _ = scenario.generate()
+        # set map before simulator is created
+        if not map_name:
+            super().set_map(
+                self.scene.params["carla_map"])
+        else:
+            super().set_map(map_name)
         # TODO: handle simulator init error
         self.simulator = scenario.getSimulator()
         self.simulator.render = False
+
+        # TODO: whether need to wait
+        # if not self.world.wait_for_tick(100.0):
+        #     print("Map load failed")
+        super().set_spectator()
 
     def get_av_ego(self):
         for car_object in list(self.scene.objects):
@@ -46,10 +49,10 @@ class ScenicCarlaAdapter(CarlaAdapter):
                 self.simulate_thread.stop()
                 # self.simulate_thread.join()
                 utils.stop_thread(self.simulate_thread)
-                super().stop()
         except Exception as exception:
             print("Stop simulator thread error:{}".format(exception))
         finally:
+            super().stop()
             self.simulate_thread = None
 
     def show_info(self):
