@@ -11,3 +11,6 @@ This home page contains an index with a brief description of the different secti
 
 ## Contributing 
 [__Coding standard__](coding_standard.md) — Guidelines to write proper code.
+
+## F.A.Q 
+[__F.A.Q__](setup/faq.md) — issues you can meet.
