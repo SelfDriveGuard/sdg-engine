@@ -12,6 +12,8 @@ nav:
   - 'Setup': 'setup/setup.md'
 - Contributing:
   - 'coding_standard': 'coding_standard.md'
+- F.A.Q.:
+  - 'F.A.Q.': 'setup/faq.md'
 
 markdown_extensions:
   - admonition
