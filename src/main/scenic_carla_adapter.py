@@ -23,7 +23,9 @@ class ScenicCarlaAdapter(CarlaAdapter):
         self.simulator = scenario.getSimulator()
         self.simulator.render = False
 
-        self.world.wait_for_tick(10.0)
+        # TODO: whether need to wait
+        # if not self.world.wait_for_tick(100.0):
+        #     print("Map load failed")
         super().set_spectator()
 
     def get_av_ego(self):
