@@ -118,7 +118,7 @@ class Engine(threading.Thread):
 
             self.carla_adapter.init(scenario, self.map_name)
             # Spectator
-            self.carla_adapter.set_spectator()
+            # self.carla_adapter.set_spectator()
             
             # get ego object, run autoware
             ego_object = self.carla_adapter.get_av_ego()

@@ -22,6 +22,7 @@ class ScenicCarlaAdapter(CarlaAdapter):
         # TODO: handle simulator init error
         self.simulator = scenario.getSimulator()
         self.simulator.render = False
+        super().set_spectator()
 
     def get_av_ego(self):
         for car_object in list(self.scene.objects):
