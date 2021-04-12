@@ -2,6 +2,7 @@ import carla
 import inspect
 import ctypes
 import numpy as np
+from threading import Timer
 
 def _async_raise(tid, exctype):
     """raises the exception, performs cleanup if needed"""
