@@ -170,6 +170,18 @@ class Engine(threading.Thread):
     def stop(self):
         if self.time_count_thread is not None:
             self.time_count_thread.cancel()
+
+        # stop infomation collector
+        self.autoware_adapter.adapted_ego.stop_collect()
+        infomation_dict = self.autoware_adapter.adapted_ego.infomation_dict
+        infomation_dict_return = {
+            "throttle": infomation_dict["throttle"],
+            "steering": infomation_dict["steer"],
+            "xDyPosition": [l.x for l in infomation_dict["location"]],
+            "yDyPosition": [l.y for l in infomation_dict["location"]]
+        }
+        self.callback(cmd="RES", msg=infomation_dict_return)
+
         # 发送状态信息给前端页面
         self.callback(cmd="STOP",msg="Ego reached target")
 
@@ -213,6 +225,9 @@ class Engine(threading.Thread):
                 print("Time limit:{}s".format(self.time))
                 self.time_count_thread = threading.Timer(interval = self.time, function = self.stop)
                 self.time_count_thread.start()
+
+            # start to collect ego infomation
+            self.autoware_adapter.adapted_ego.start_to_collect()
             # create other elements after EGO has been launched
             self.carla_adapter.run()
         elif state == "STOP":
