@@ -24,6 +24,7 @@ class EngineWebsocket:
     def __init__(self):
         self.engine = None #判断是否正在运行测试
         self.is_load_map = False  #存储当前提交运行，是否为加载地图
+        self.is_brief = False
         self.engine_is_running = False
         self.websocket = None
         self.start_event = threading.Event()
@@ -59,6 +60,9 @@ class EngineWebsocket:
     def get_stop_event(self):
         return self.stop_event
 
+    def set_brief(self, is_brief):
+        self.is_brief = is_brief
+
     async def send_msg(self, cmd=None, msg=None):
         info = {}
         # 若有cmd，则先相应地更新is_engine_running的取值
@@ -76,12 +80,13 @@ class EngineWebsocket:
         await self.websocket.send(json.dumps(info))
 
     def callback(self, cmd, msg=None):
-        asyncio.run(self.send_msg(cmd, msg))
+        if self.is_brief and cmd == "RES" or not self.is_brief:
+            asyncio.run(self.send_msg(cmd, msg))
 
 async def main(websocket, path):
         engine_websocket.set_websocket(websocket)
         # 发送状态信息给前端页面 isRunning/notRunning
-        await engine_websocket.send_msg()
+        # await engine_websocket.send_msg()
 
         async for data in websocket:
             engine = engine_websocket.get_engine()
@@ -150,6 +155,26 @@ async def main(websocket, path):
                 print("move test: {}".format(msg['code']))
                 if engine is not None:
                     engine.change_view(msg['code'])
+            elif cmd == "get_drv_decision":
+                print("start to run test sciently")
+                engine_websocket.set_brief(True)
+                language = msg['lang'] if 'lang' in msg else "scenest"
+                time_limit = msg['time'] if 'time' in msg else -1
+                if not os.path.exists(input_dir):
+                    os.makedirs(input_dir)
+                scenest_file = open(input_file, 'w')
+                scenest_file.write(msg['code'])
+                scenest_file.close()
+
+                start_event.clear() # 重置状态
+                stop_event.clear() 
+                # 新线程中运行engine
+                engine = Engine(input_file, engine_websocket.callback, language=language, time_limit=time_limit, start_event=start_event, stop_event=stop_event)
+                engine.start()
+                start_event.set() # 启动
+                engine_websocket.set_engine(engine)
+                engine_websocket.set_engine_running(True)
+                print("engine started")
             else:
                 print("error")
 

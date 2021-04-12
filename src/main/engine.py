@@ -177,7 +177,7 @@ class Engine(threading.Thread):
             trace_list = self.ast.get_traces()
             self.check_assertion(trace_list)
             # 发送assert信息给前端页面
-            self.callback(cmd="ASSERT", msg=self.assertion)
+            self.callback(cmd="RES", msg=self.assertion)
 
         # 结束arla_adapter和autoware_adapter
         print("Stoping engine")
