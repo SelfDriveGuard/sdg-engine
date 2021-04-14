@@ -2,6 +2,7 @@ import threading
 import random
 import carla
 import math
+from src.tools.utils import RepeatedTimer
 
 
 class CarlaAdapter:
@@ -239,6 +240,12 @@ class AdaptedVehicle(AdaptedActor):
         self.bicycle = []
         self.motorbicycle = []
         self.speed = speed
+        self.info_collector_thread = None
+        self.infomation_dict = {
+            "throttle":[],
+            "steer":[],
+            "location":[]
+        }
 
     def set_speed(self):
         if self.speed is not None:
@@ -272,6 +279,22 @@ class AdaptedVehicle(AdaptedActor):
                     continue
             self.target_transform = transform
             break
+
+
+    def start_to_collect(self):
+        # collector method
+        def collect_infomation(actor, info_dict):
+            # collect actor infomation
+            control = actor.get_control()
+            location = actor.get_location()
+            info_dict["throttle"].append(control.throttle)
+            info_dict["steer"].append(control.steer)
+            info_dict["location"].append(location)
+        # start to collect actor infomation
+        self.info_collector_thread = RepeatedTimer(1, collect_infomation, self.carla_actor, self.infomation_dict) # auto starts
+    def stop_collect(self):
+        # stop to collect actor infomation
+        self.info_collector_thread.stop()
 
 
 class AdaptedPedestrian(AdaptedActor):

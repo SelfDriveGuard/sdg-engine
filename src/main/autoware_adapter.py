@@ -119,6 +119,7 @@ class AutowareAdapter:
             if actor.type_id.split(".")[0] == "vehicle":
                 if actor.attributes['role_name'] == "ego_vehicle":
                     self.ego_actor = actor
+                    self.adapted_ego.carla_actor = actor
                     return True
         return False
 
