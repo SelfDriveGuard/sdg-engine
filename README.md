@@ -15,11 +15,11 @@ sudo apt install python3.8-venv
 # 安装pip
 curl https://bootstrap.pypa.io/get-pip.py -o get-pip.py   # 下载安装脚本
 sudo apt-get install python3.8-distutils
-sudo python get-pip.py
-sudo pip install --upgrade keyrings.alt
+python get-pip.py
+pip install --upgrade keyrings.alt
 
 # 安装poetry
-sudo pip install poetry --force 
+pip install poetry --force 
 
 # 安装第三方依赖
 sudo apt install libxerces-c3.2
