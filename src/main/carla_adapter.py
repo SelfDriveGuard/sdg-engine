@@ -294,7 +294,8 @@ class AdaptedVehicle(AdaptedActor):
         self.info_collector_thread = RepeatedTimer(1, collect_infomation, self.carla_actor, self.infomation_dict) # auto starts
     def stop_collect(self):
         # stop to collect actor infomation
-        self.info_collector_thread.stop()
+        if self.info_collector_thread:
+            self.info_collector_thread.stop()
 
 
 class AdaptedPedestrian(AdaptedActor):
