@@ -85,13 +85,15 @@ class EngineWebsocket:
             asyncio.run(self.send_msg(cmd, msg))
 
 def _signal_handler(signum, frame):
-    print("[Terminate] Terminate engine when receiving a signal interrupt]")
+    print("[Terminate] Destroy engine when receiving a signal interrupt]")
     engine = engine_websocket.get_engine()
 
     stop_event = engine_websocket.get_stop_event()
     if engine is not None:
         stop_event.set()
+    print("[Terminate] Destroying...")
     time.sleep(5)
+    print("[Terminate] Destroyed")
     sys.exit(0)
 
 async def main(websocket, path):
