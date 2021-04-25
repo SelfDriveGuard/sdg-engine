@@ -15,6 +15,8 @@ networkx = "^2.5"
 roslibpy = "^1.1.0"
 metric-temporal-logic = "^0.2.2"
 scenic = "^2.0.0"
+tabulate = "^0.7.5"
+pip = "^1.7.1"
 
 [tool.poetry.dev-dependencies]
 autopep8 = "^1.5.4"
