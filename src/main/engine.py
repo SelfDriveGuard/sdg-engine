@@ -246,9 +246,9 @@ class Engine(threading.Thread):
             # create criteria and registry to criteria_manager
             criteria = self.autoware_adapter.adapted_ego.create_criterias()
             self.criteria_manager.registry_criterias(criteria)
-            self.criteria_manager.start_to_evaluate()
             # start to collect infomation and evaluate
-            
+            self.criteria_manager.start_to_evaluate()
+
             # create other elements after EGO has been launched
             self.carla_adapter.run()
         elif state == "STOP":

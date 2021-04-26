@@ -298,21 +298,24 @@ class AdaptedVehicle(AdaptedActor):
         if self.info_collector_thread:
             self.info_collector_thread.stop()
     
-    def create_criterias(self):       
+    def create_criterias(self):
         # 注册各种标准
         _ego_max_velocity_allowed = 20       # Maximum allowed velocity [km/h]
         max_velocity_test = MaxVelocityTest(self.carla_actor, _ego_max_velocity_allowed)
         _avg_velocity_success = 10
         average_velocity_test = AverageVelocityTest(self.carla_actor, _avg_velocity_success)
         collision_test = CollisionTest(self.carla_actor)
-        off_road_test = OffRoadTest(self.carla_actor)
+        _LOWEST_SPEED_THRESHOLD = 1         # [m/s]
+        _BELOW_THRESHOLD_MAX_TIME = 3
+        agent_block_test = ActorSpeedAboveThresholdTest(self.carla_actor, _LOWEST_SPEED_THRESHOLD, _BELOW_THRESHOLD_MAX_TIME)        
         keep_lane_test = KeepLaneTest(self.carla_actor)
+        off_road_test = OffRoadTest(self.carla_actor)
         on_sidewalk_test = OnSidewalkTest(self.carla_actor)
         wrong_lane_test = WrongLaneTest(self.carla_actor)
         running_red_light_test = RunningRedLightTest(self.carla_actor)
         running_stop_test = RunningStopTest(self.carla_actor)
-        return [max_velocity_test, average_velocity_test, collision_test, off_road_test, \
-            keep_lane_test, on_sidewalk_test, wrong_lane_test, running_red_light_test, running_stop_test]
+        return [max_velocity_test, average_velocity_test, collision_test, agent_block_test, keep_lane_test, \
+            off_road_test, on_sidewalk_test, wrong_lane_test, running_red_light_test, running_stop_test]
 
 
 class AdaptedPedestrian(AdaptedActor):

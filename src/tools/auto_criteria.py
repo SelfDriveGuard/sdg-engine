@@ -503,6 +503,62 @@ class CollisionTest(Criterion):
         if event.other_actor.id != 0:
             self.last_id = event.other_actor.id
 
+class ActorSpeedAboveThresholdTest(Criterion):
+
+    """
+    This test will fail if the actor has had its linear velocity lower than a specific value for
+    a specific amount of time
+    Important parameters:
+    - actor: CARLA actor to be used for this test
+    - speed_threshold: speed required
+    - below_threshold_max_time: Maximum time (in seconds) the actor can remain under the speed threshold
+    - terminate_on_failure [optional]: If True, the complete scenario will terminate upon failure of this test
+    """
+
+    def __init__(self, actor, speed_threshold, below_threshold_max_time,
+                 name="AgentBlockedTest"):
+        """
+        Class constructor.
+        """
+        super(ActorSpeedAboveThresholdTest, self).__init__(name, actor, 0)
+        self._actor = actor
+        self._speed_threshold = speed_threshold
+        self._below_threshold_max_time = below_threshold_max_time
+        self._time_last_valid_state = None
+
+    def update(self):
+        """
+        Check if the actor speed is above the speed_threshold
+        """
+        _last_velocity_dict = CriteriaManager.get_velocity(self.actor)
+        linear_speed = _last_velocity_dict['value']
+
+        if linear_speed is not None:
+            if linear_speed < self._speed_threshold and self._time_last_valid_state:
+                if (_last_velocity_dict['elapsed_seconds'] - self._time_last_valid_state) > self._below_threshold_max_time:
+                    # Game over. The actor has been "blocked" for too long
+                    self.failure_count += 1
+
+                    # record event
+                    _last_location_dict = CriteriaManager.get_location(self.actor)
+                    vehicle_location = _last_location_dict['value']
+                    blocked_event = ViolationEvent(event_type=ViolationEventType.VEHICLE_BLOCKED, location=vehicle_location)
+                    ActorSpeedAboveThresholdTest._set_event_message(blocked_event, vehicle_location)
+                    self.list_traffic_events.append(blocked_event)
+            else:
+                self._time_last_valid_state = _last_velocity_dict['elapsed_seconds']
+
+    @staticmethod
+    def _set_event_message(event, location):
+        """
+        Sets the message of the event
+        """
+
+        event.set_message('Agent got blocked at (x={}, y={}, z={})'.format(round(location.x, 3),
+                                                                           round(location.y, 3),
+                                                                           round(location.z, 3)))
+
+
 class KeepLaneTest(Criterion):
     """
     This class contains an atomic test for keeping lane.
