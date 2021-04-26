@@ -50,7 +50,6 @@ class Engine(threading.Thread):
 
         # 评分
         self.criteria_manager = None
-        self.criteria_thread = None
  
     def run(self):
         if os.environ.get("CARLA_SERVER_IP") == None:
