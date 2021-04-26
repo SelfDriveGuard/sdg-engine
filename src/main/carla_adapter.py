@@ -246,7 +246,6 @@ class AdaptedVehicle(AdaptedActor):
             "steer":[],
             "location":[]
         }
-        self.criteria_manager = None
 
     def set_speed(self):
         if self.speed is not None:
