@@ -68,7 +68,7 @@ class EngineWebsocket:
         # 若有cmd，则先相应地更新is_engine_running的取值
         if cmd:
             info['cmd'] = cmd
-            if cmd == "ASSERT" or cmd == "STOP" or cmd == "RES":
+            if cmd == "ASSERT" or cmd == "STOP" or cmd == "RES" or cmd == "CRITERIA":
                 self.set_engine_running(False)
             else:
                 self.set_engine_running(True)

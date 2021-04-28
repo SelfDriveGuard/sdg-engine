@@ -200,9 +200,11 @@ class Engine(threading.Thread):
             self.callback(cmd="ASSERT", msg=self.assertion)
 
         # 评分模块停止记分并打分
-        self.criteria_manager.get_global_event_report()
-        self.criteria_manager.compute_global_statistics()
+        # 若需查看记录的违规Event的列表，取消下方注释
+        # self.criteria_manager.get_global_event_report()
+        global_statistics = self.criteria_manager.compute_global_statistics()
         self.criteria_manager.stop()
+        self.callback(cmd="CRITERIA", msg=global_statistics)
 
         # 结束arla_adapter和autoware_adapter
         print("Stoping engine")

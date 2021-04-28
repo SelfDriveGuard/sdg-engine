@@ -164,13 +164,14 @@ class CriteriaManager(object):
         """
         if self.criteria_thread:
             # Create the title of sheet
-            output = "\n"
+            output = "\n\t"
             output += "====== Result of Test ======"
-            output += "\n"
+            output += "\n\t"
 
             # Criteria the content of sheet
             header = ['Criterion', 'Result', 'Value']
             list_statistics = [header]
+            frontend_msg = ''
 
             global_score = 100
             for criteria in self._registry_criteria_list:
@@ -178,18 +179,20 @@ class CriteriaManager(object):
                 if isinstance(criteria, CollisionTest):
                     actual_value = criteria.failure_count
                 else:
-                    actual_value = criteria.failure_count/criteria.test_count if criteria.test_count>0 else 0.0
+                    actual_value = round(criteria.failure_count/criteria.test_count, 2) if criteria.test_count>0 else 0.0
                 global_score -= actual_value          
                 list_statistics.extend([[str(criteria), result, actual_value]])
+                frontend_msg += f"[{str(criteria)}]: {result}, penalty: -{actual_value}; "
             
-            output += f">score:{global_score}\n"
+            output += f">score:{global_score}\n\t"
             output += tabulate(list_statistics, tablefmt='fancy_grid')
+            frontend_msg += f"[FINAL SCORE]: {global_score}"
 
             print(output)
-            return global_score
+            return frontend_msg
 
         print('the criteria_thread did not start!')
-        return 0.0
+        return ''
 
     def get_global_event_report(self):
         """
