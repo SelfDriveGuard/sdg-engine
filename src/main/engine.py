@@ -11,6 +11,8 @@ from src.scenest_parser.ast.error.error import IllegalTypeException
 from src.scenest_parser.ast.assertion.assertion import AgentVisibleDetectionAssertion, AgentErrorDetectionAssertion, TrafficDetectionAssertion, AgentSafetyAssertion
 from src.tools import utils
 from src.scenic_parser import parser as scenic_parser
+from src.tools.auto_criteria import CriteriaManager
+from src.tools.utils import RepeatedTimer
 import numpy as np
 import mtl
 
@@ -46,6 +48,9 @@ class Engine(threading.Thread):
         self.language = language
         print("Using {}".format(self.language))
 
+        # 评分
+        self.criteria_manager = None
+ 
     def run(self):
         if os.environ.get("CARLA_SERVER_IP") == None:
             os.environ["CARLA_SERVER_IP"] = "127.0.0.1"
@@ -60,6 +65,9 @@ class Engine(threading.Thread):
         if self.language == "scenic":
             self.carla_adapter = ScenicCarlaAdapter(
                 os.environ.get("CARLA_SERVER_IP"))
+
+        # 实例化carla_adapter后，实例化criteria_manager
+        self.criteria_manager = CriteriaManager(self.carla_adapter, interval=1)
 
         # 前端指令切换地图
         if self.is_load_map:
@@ -191,6 +199,13 @@ class Engine(threading.Thread):
             # 发送assert信息给前端页面
             self.callback(cmd="ASSERT", msg=self.assertion)
 
+        # 评分模块停止记分并打分
+        # 若需查看记录的违规Event的列表，取消下方注释
+        # self.criteria_manager.get_global_event_report()
+        global_statistics = self.criteria_manager.compute_global_statistics()
+        self.criteria_manager.stop()
+        self.callback(cmd="CRITERIA", msg=global_statistics)
+
         # 结束arla_adapter和autoware_adapter
         print("Stoping engine")
         if self.autoware_adapter.ego_has_spawned():
@@ -228,6 +243,13 @@ class Engine(threading.Thread):
 
             # start to collect ego infomation
             self.autoware_adapter.adapted_ego.start_to_collect()
+
+            # create criteria and registry to criteria_manager
+            criteria = self.autoware_adapter.adapted_ego.create_criterias()
+            self.criteria_manager.registry_criterias(criteria)
+            # start to collect infomation and evaluate
+            self.criteria_manager.start_to_evaluate()
+
             # create other elements after EGO has been launched
             self.carla_adapter.run()
         elif state == "STOP":

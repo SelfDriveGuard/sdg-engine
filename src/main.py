@@ -11,7 +11,8 @@ from src.main.engine import Engine
 # windows的bug，不能接受KeyboardInterrupt
 # https://stackoverflow.com/questions/27480967/why-does-the-asyncios-event-loop-suppress-the-keyboardinterrupt-on-windows
 import signal
-signal.signal(signal.SIGINT, signal.SIG_DFL)
+import time
+# signal.signal(signal.SIGINT, signal.SIG_DFL)
 
 input_dir = "input_temp"
 input_file_name = "input.sc"
@@ -68,7 +69,7 @@ class EngineWebsocket:
         # 若有cmd，则先相应地更新is_engine_running的取值
         if cmd:
             info['cmd'] = cmd
-            if cmd == "ASSERT" or cmd == "STOP" or cmd == "RES":
+            if cmd == "ASSERT" or cmd == "STOP" or cmd == "RES" or cmd == "CRITERIA":
                 self.set_engine_running(False)
             else:
                 self.set_engine_running(True)
@@ -82,6 +83,18 @@ class EngineWebsocket:
     def callback(self, cmd, msg=None):
         if (self.is_brief and cmd == "RES") or (not self.is_brief and cmd != "RES"):
             asyncio.run(self.send_msg(cmd, msg))
+
+def _signal_handler(signum, frame):
+    print("[Terminate] Destroy engine when receiving a signal interrupt]")
+    engine = engine_websocket.get_engine()
+
+    stop_event = engine_websocket.get_stop_event()
+    if engine is not None:
+        stop_event.set()
+    print("[Terminate] Destroying...")
+    time.sleep(5)
+    print("[Terminate] Destroyed")
+    sys.exit(0)
 
 async def main(websocket, path):
         engine_websocket.set_websocket(websocket)
@@ -135,6 +148,7 @@ async def main(websocket, path):
                 engine_websocket.set_engine_running(True)
                 # 发送状态信息给前端页面 isRunning/notRunning
                 await engine_websocket.send_msg()
+                signal.signal(signal.SIGINT, _signal_handler)
                 print("engine started")
             elif cmd == "stop":
                 print("stop test")
