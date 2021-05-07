@@ -21,6 +21,8 @@ class ScenestCarlaAdapter(CarlaAdapter):
         self.scenario = scenario
         if self.scenario.has_npc_vehicles():
             self.__create_npc_vehicles(self.scenario.get_npc_vehicles())
+        if self.scenario.has_environment():
+            self.__set_environment(self.scenario.get_environment())
 
     def run(self):
         if self.scenario.has_npc_vehicles():
@@ -29,8 +31,6 @@ class ScenestCarlaAdapter(CarlaAdapter):
             self.__set_pedestrians(self.scenario.get_pedestrians())
         if self.scenario.has_obstacles():
             self.__set_obstacles(self.scenario.get_obstacles())
-        if self.scenario.has_environment():
-            self.__set_environment(self.scenario.get_environment())
 
     def stop(self):
         # npc thread
@@ -147,7 +147,7 @@ class ScenestCarlaAdapter(CarlaAdapter):
                 # check kind type
                 if type(weather.get_weather_kind_value()) == WeatherContinuousIndex:
                     weather.cloudiness = (
-                        1-weather.get_weather_kind().value)*100
+                        1-weather.get_weather_kind_value().get_index())*100
                 else:
                     if weather.get_weather_kind_value().get_level().value == 0:
                         weather.cloudiness = (1 - light) * 100
@@ -155,10 +155,13 @@ class ScenestCarlaAdapter(CarlaAdapter):
                         weather.cloudiness = (1 - middle) * 100
                     else:
                         weather.cloudiness = (1 - heavy) * 100
+                weather_now.precipitation = 0
+                weather_now.precipitation_deposits = 0
+                weather_now.cloudiness = weather.cloudiness
             elif weather.get_weather_kind().value == 1:
                 if type(weather.get_weather_kind_value()) == WeatherContinuousIndex:
-                    weather.precipitation = weather.get_weather_kind().value*100
-                    weather.precipitation_deposits = weather.get_weather_kind().value*100
+                    weather.precipitation = weather.get_weather_kind_value().get_index()*100
+                    weather.precipitation_deposits = weather.get_weather_kind_value().get_index()*100
                 else:
                     if weather.get_weather_kind_value().get_level().value == 0:
                         weather.precipitation = light * 100
@@ -169,10 +172,12 @@ class ScenestCarlaAdapter(CarlaAdapter):
                     else:
                         weather.precipitation = heavy * 100
                         weather.precipitation_deposits = heavy * 100
+                weather_now.precipitation = weather.precipitation
+                weather_now.precipitation_deposits = weather.precipitation_deposits
             elif weather.get_weather_kind().value == 3:
                 if type(weather.get_weather_kind_value()) == WeatherContinuousIndex:
-                    weather.fog_density = weather.get_weather_kind().value * 100
-                    weather.fog_distance = weather.get_weather_kind().value * 1000
+                    weather.fog_density = weather.get_weather_kind_value().get_index() * 100
+                    weather.fog_distance = weather.get_weather_kind_value().get_index() * 1000
                 else:
                     if weather.get_weather_kind_value().get_level().value == 0:
                         weather.fog_density = light * 100
@@ -183,9 +188,11 @@ class ScenestCarlaAdapter(CarlaAdapter):
                     else:
                         weather.fog_density = heavy * 100
                         weather.fog_distance = heavy * 1000
+                weather_now.fog_density = weather.fog_density
+                weather_now.fog_distance = weather.fog_distance
             elif weather.get_weather_kind().value == 4:
                 if type(weather.get_weather_kind_value()) == WeatherContinuousIndex:
-                    weather.wetness = weather.get_weather_kind().value * 100
+                    weather.wetness = weather.get_weather_kind_value().get_index() * 100
                 else:
                     if weather.get_weather_kind_value().get_level().value == 0:
                         weather.wetness = light * 100
@@ -193,8 +200,10 @@ class ScenestCarlaAdapter(CarlaAdapter):
                         weather.wetness = middle * 100
                     else:
                         weather.wetness = heavy * 100
+                weather_now.wetness = weather.wetness
                 pass
         pass
+        print(weather_now)
         self.world.set_weather(weather_now)
 
     def __get_vehicle_blueprint(self, npc_ast):
