@@ -67,7 +67,7 @@ class Engine(threading.Thread):
                 os.environ.get("CARLA_SERVER_IP"))
 
         # 实例化carla_adapter后，实例化criteria_manager
-        # self.criteria_manager = CriteriaManager(self.carla_adapter, interval=1)
+        self.criteria_manager = CriteriaManager(self.carla_adapter, interval=1)
 
         # 前端指令切换地图
         if self.is_load_map:
@@ -124,7 +124,7 @@ class Engine(threading.Thread):
             params["address"] = os.environ.get("CARLA_SERVER_IP")
             scenario = scenic_parser.parse(self.code_file, params)
 
-            self.carla_adapter.init(scenario, self.map_name)
+            self.carla_adapter.init(scenario, self.map_name, self.callback)
             # Spectator
             # self.carla_adapter.set_spectator()
             
@@ -202,9 +202,9 @@ class Engine(threading.Thread):
         # 评分模块停止记分并打分
         # 若需查看记录的违规Event的列表，取消下方注释
         # self.criteria_manager.get_global_event_report()
-        # global_statistics = self.criteria_manager.compute_global_statistics()
-        # self.criteria_manager.stop()
-        # self.callback(cmd="CRITERIA", msg=global_statistics)
+        global_statistics = self.criteria_manager.compute_global_statistics()
+        self.criteria_manager.stop()
+        self.callback(cmd="CRITERIA", msg=global_statistics)
 
         # 结束arla_adapter和autoware_adapter
         print("Stoping engine")
@@ -244,11 +244,11 @@ class Engine(threading.Thread):
             # start to collect ego infomation
             self.autoware_adapter.adapted_ego.start_to_collect()
 
-            ## create criteria and registry to criteria_manager
-            # criteria = self.autoware_adapter.adapted_ego.create_criterias()
-            # self.criteria_manager.registry_criterias(criteria)
-            ## start to collect infomation and evaluate
-            #self.criteria_manager.start_to_evaluate()
+            # create criteria and registry to criteria_manager
+            criteria = self.autoware_adapter.adapted_ego.create_criterias()
+            self.criteria_manager.registry_criterias(criteria)
+            # start to collect infomation and evaluate
+            self.criteria_manager.start_to_evaluate()
 
             # create other elements after EGO has been launched
             self.carla_adapter.run()

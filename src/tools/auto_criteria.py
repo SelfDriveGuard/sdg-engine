@@ -164,14 +164,15 @@ class CriteriaManager(object):
         """
         if self.criteria_thread:
             # Create the title of sheet
-            output = "\n\t"
-            output += "====== Result of Test ======"
-            output += "\n\t"
+            output = "====== Result of Test ======"
+            output += "\n"
 
             # Criteria the content of sheet
-            header = ['Criterion', 'Result', 'Value']
+            header = ['Criterion', 'Result', 'Penalty']
             list_statistics = [header]
-            frontend_msg = ''
+            frontend_msg = {
+                'list': []
+            }
 
             global_score = 100
             for criteria in self._registry_criteria_list:
@@ -181,12 +182,16 @@ class CriteriaManager(object):
                 else:
                     actual_value = round(criteria.failure_count/criteria.test_count, 2) if criteria.test_count>0 else 0.0
                 global_score -= actual_value          
-                list_statistics.extend([[str(criteria), result, actual_value]])
-                frontend_msg += f"[{str(criteria)}]: {result}, penalty: -{actual_value}; "
+                list_statistics.extend([[str(criteria), result, -actual_value]])
+                frontend_msg['list'].append({
+                    'criterion':str(criteria),
+                    'result':result,
+                    'penalty':-actual_value
+                })
             
-            output += f">score:{global_score}\n\t"
+            output += f">score:{global_score}\n"
             output += tabulate(list_statistics, tablefmt='fancy_grid')
-            frontend_msg += f"[FINAL SCORE]: {global_score}"
+            frontend_msg['score'] = global_score
 
             print(output)
             return frontend_msg
