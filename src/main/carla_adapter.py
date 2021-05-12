@@ -316,6 +316,10 @@ class AdaptedVehicle(AdaptedActor):
         return [max_velocity_test, average_velocity_test, collision_test, agent_block_test, keep_lane_test, \
             off_road_test, on_sidewalk_test, wrong_lane_test, running_red_light_test, running_stop_test]
 
+    def attach_collision_sensor(self):
+        blueprint = self.world.get_blueprint_library().find('sensor.other.collision')
+        collision_sensor = self.world.spawn_actor(blueprint, carla.Transform(), attach_to=self.carla_actor)
+        collision_sensor.listen(lambda event: print("Collision:{}".format(event)))
 
 class AdaptedPedestrian(AdaptedActor):
     def __init__(self, world, name, blueprint):

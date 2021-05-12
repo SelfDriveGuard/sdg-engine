@@ -250,6 +250,9 @@ class Engine(threading.Thread):
             # start to collect infomation and evaluate
             self.criteria_manager.start_to_evaluate()
 
+            # attach collision sensor
+            self.autoware_adapter.adapted_ego.attach_collision_sensor()
+
             # create other elements after EGO has been launched
             self.carla_adapter.run()
         elif state == "STOP":
