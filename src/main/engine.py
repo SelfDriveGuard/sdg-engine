@@ -18,7 +18,7 @@ import mtl
 
 
 class Engine(threading.Thread):
-    def __init__(self, code_file, callback, map_name=None,language='scenest', time_limit=-1, is_load_map=False, start_event=None, stop_event=None):
+    def __init__(self, code_file, callback, map_name=None, language='scenest', time_limit=-1, is_load_map=False, start_event=None, stop_event=None):
         threading.Thread.__init__(self)
         self.code_file = code_file
         self.carla_adapter = None
@@ -50,7 +50,7 @@ class Engine(threading.Thread):
 
         # 评分
         self.criteria_manager = None
- 
+
     def run(self):
         if os.environ.get("CARLA_SERVER_IP") == None:
             os.environ["CARLA_SERVER_IP"] = "127.0.0.1"
@@ -80,13 +80,13 @@ class Engine(threading.Thread):
         self.start_event.wait()
         print("engine start test")
         self.start_test()
-        
+
         self.stop_event.wait()
         print("caught stop event")
         self.stop()
         print("kill engine thread")
 
-    def change_view(self, code):       
+    def change_view(self, code):
         self.carla_adapter.set_spectator_transform(code)
 
     def start_test(self):
@@ -99,11 +99,11 @@ class Engine(threading.Thread):
                 # 前端指令提交代码（直接提交代码没有预加载地图/已经预加载地图）
                 self.ast = driver.Parse(self.code_file)
             except IllegalTypeException as typerr:
-                print (str(typerr))
+                print(str(typerr))
                 # 发送状态信息给前端页面
                 self.callback(cmd="STOP", msg=str(typerr))
             except Exception as err:
-                print (str(err))
+                print(str(err))
                 # 发送状态信息给前端页面
                 self.callback(cmd="STOP", msg=str(err))
 
@@ -127,7 +127,7 @@ class Engine(threading.Thread):
             self.carla_adapter.init(scenario, self.map_name)
             # Spectator
             # self.carla_adapter.set_spectator()
-            
+
             # get ego object, run autoware
             ego_object = self.carla_adapter.get_av_ego()
             if ego_object is not None:
@@ -191,7 +191,7 @@ class Engine(threading.Thread):
         self.callback(cmd="RES", msg=infomation_dict_return)
 
         # 发送状态信息给前端页面
-        self.callback(cmd="STOP",msg="Ego reached target")
+        self.callback(cmd="STOP", msg="Ego reached target")
 
         if self.language == "scenest":
             trace_list = self.ast.get_traces()
@@ -238,20 +238,23 @@ class Engine(threading.Thread):
             # check time limit
             if self.time > 0:
                 print("Time limit:{}s".format(self.time))
-                self.time_count_thread = threading.Timer(interval = self.time, function = self.stop)
+                self.time_count_thread = threading.Timer(
+                    interval=self.time, function=self.stop)
                 self.time_count_thread.start()
 
             # start to collect ego infomation
             self.autoware_adapter.adapted_ego.start_to_collect()
 
             # create criteria and registry to criteria_manager
-            criteria = self.autoware_adapter.adapted_ego.create_criterias(self.on_ego_state_change)
+            criteria = self.autoware_adapter.adapted_ego.create_criterias()
             self.criteria_manager.registry_criterias(criteria)
             # start to collect infomation and evaluate
             self.criteria_manager.start_to_evaluate()
 
             # attach collision sensor
-            # self.autoware_adapter.adapted_ego.attach_collision_sensor()
+            sensor =  self.autoware_adapter.adapted_ego.start_collision_detect(
+                self.on_ego_state_change)
+            self.carla_adapter.actor_list.append(sensor)
 
             # create other elements after EGO has been launched
             self.carla_adapter.run()
@@ -468,7 +471,8 @@ class Engine(threading.Thread):
             # 防止出现：trace_time指定为从0开始，但trace_modified的第一个时间戳晚于0
             if item['time'] >= trace_time and dis_agent_ground in item['truth'] and diff_agent_state in item['perception'] and diff_agent_ground in item['truth']:
                 # dis
-                trace_mtl['a'].append((item['time'], utils.dis(item['truth'][dis_agent_ground][0]) <= sensing_range))
+                trace_mtl['a'].append((item['time'], utils.dis(
+                    item['truth'][dis_agent_ground][0]) <= sensing_range))
                 # diff
                 trace_mtl['b'].append((item['time'], utils.diff(
                     item['perception'][diff_agent_state], item['truth'][diff_agent_ground]) <= error_threshold))
@@ -549,12 +553,14 @@ class Engine(threading.Thread):
             # 防止出现：trace_time指定为从0开始，但trace_modified的第一个时间戳晚于0
             if item['time'] >= trace_time and dis_agent_ground in item['truth'] and diff_agent_state in item['perception'] and diff_agent_ground in item['truth'] and safety_agent_state in item['perception']:
                 # dis
-                trace_mtl['a'].append((item['time'], utils.dis(item['truth'][dis_agent_ground][0]) <= sensing_range))
+                trace_mtl['a'].append((item['time'], utils.dis(
+                    item['truth'][dis_agent_ground][0]) <= sensing_range))
                 # diff
                 trace_mtl['b'].append((item['time'], utils.diff(
                     item['perception'][diff_agent_state], item['truth'][diff_agent_ground]) <= error_threshold))
                 # SafetyAssertion
-                trace_mtl['c'].append((item['time'], utils.dis(item['perception'][safety_agent_state][0]) >= safety_radius))
+                trace_mtl['c'].append((item['time'], utils.dis(
+                    item['perception'][safety_agent_state][0]) >= safety_radius))
 
         # 若trace中没有提取出与用户订阅相匹配的数据，则返回true
         for item in trace_mtl:
