@@ -297,13 +297,13 @@ class AdaptedVehicle(AdaptedActor):
         if self.info_collector_thread:
             self.info_collector_thread.stop()
     
-    def create_criterias(self):
+    def create_criterias(self, ego_state_callback):
         # 注册各种标准
         _ego_max_velocity_allowed = 20       # Maximum allowed velocity [km/h]
         max_velocity_test = MaxVelocityTest(self.carla_actor, _ego_max_velocity_allowed)
         _avg_velocity_success = 10
         average_velocity_test = AverageVelocityTest(self.carla_actor, _avg_velocity_success)
-        collision_test = CollisionTest(self.carla_actor)
+        collision_test = CollisionTest(actor = self.carla_actor, another_callback= ego_state_callback)
         _LOWEST_SPEED_THRESHOLD = 1         # [m/s]
         _BELOW_THRESHOLD_MAX_TIME = 3
         agent_block_test = ActorSpeedAboveThresholdTest(self.carla_actor, _LOWEST_SPEED_THRESHOLD, _BELOW_THRESHOLD_MAX_TIME)        
@@ -317,9 +317,12 @@ class AdaptedVehicle(AdaptedActor):
             off_road_test, on_sidewalk_test, wrong_lane_test, running_red_light_test, running_stop_test]
 
     def attach_collision_sensor(self):
+        def callback(event):
+            print("Collision!{}".format(event))
         blueprint = self.world.get_blueprint_library().find('sensor.other.collision')
         collision_sensor = self.world.spawn_actor(blueprint, carla.Transform(), attach_to=self.carla_actor)
-        collision_sensor.listen(lambda event: print("Collision:{}".format(event)))
+        collision_sensor.listen(lambda event: callback(event))
+
 
 class AdaptedPedestrian(AdaptedActor):
     def __init__(self, world, name, blueprint):

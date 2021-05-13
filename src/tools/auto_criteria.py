@@ -392,7 +392,7 @@ class CollisionTest(Criterion):
     MAX_ID_TIME = 5                 # Amount of time the last collision if is remembered
 
     def __init__(self, actor, other_actor=None, other_actor_type=None,
-                 optional=False, name="CollisionTest"):
+                 optional=False, name="CollisionTest", another_callback=None):
         """
         Construction with sensor setup
         """
@@ -409,6 +409,8 @@ class CollisionTest(Criterion):
         self.registered_collisions = []
         self.last_id = None
         self.collision_time = None
+
+        self.ego_state_callback = another_callback
 
     def update(self):
         """
@@ -501,6 +503,9 @@ class CollisionTest(Criterion):
         self.registered_collisions.append(actor_location)
         self.list_traffic_events.append(collision_event)
         self.failure_count += 1
+
+        print("***Collision detected***")
+        self.ego_state_callback("STOP")
 
         # Number 0: static objects -> ignore it
         if event.other_actor.id != 0:

@@ -245,13 +245,13 @@ class Engine(threading.Thread):
             self.autoware_adapter.adapted_ego.start_to_collect()
 
             # create criteria and registry to criteria_manager
-            criteria = self.autoware_adapter.adapted_ego.create_criterias()
+            criteria = self.autoware_adapter.adapted_ego.create_criterias(self.on_ego_state_change)
             self.criteria_manager.registry_criterias(criteria)
             # start to collect infomation and evaluate
             self.criteria_manager.start_to_evaluate()
 
             # attach collision sensor
-            self.autoware_adapter.adapted_ego.attach_collision_sensor()
+            # self.autoware_adapter.adapted_ego.attach_collision_sensor()
 
             # create other elements after EGO has been launched
             self.carla_adapter.run()
