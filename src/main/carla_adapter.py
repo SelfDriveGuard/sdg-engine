@@ -323,34 +323,17 @@ class AdaptedVehicle(AdaptedActor):
         return [max_velocity_test, average_velocity_test, collision_test, agent_block_test, keep_lane_test,
                 off_road_test, on_sidewalk_test, wrong_lane_test, running_red_light_test, running_stop_test]
 
-    # def start_collision_detect(self, state_callback):
-    #     def attach_collision_sensor(world, actor, state_callback):
-    #         def callback(event):
-    #             print("***Collision detected:{}***".format(event))
-    #             # stop the test
-    #             state_callback("STOP")
-    #         blueprint = world.get_blueprint_library().find('sensor.other.collision')
-    #         collision_sensor = world.spawn_actor(
-    #             blueprint, carla.Transform(), attach_to=actor)
-    #         collision_sensor.listen(lambda event: callback(event))
-    #         # TODO: to keep sensor alive
-    #         while True:
-    #             time.sleep(10)
-
-    #     thread = threading.Thread(target=attach_collision_sensor, args=(
-    #         self.world, self.carla_actor, state_callback))
-    #     thread.start()
-
     def start_collision_detect(self, state_callback):
         def attach_collision_sensor(collision_sensor, state_callback):
             HAS_STOPPED = False
+
             def callback(event):
                 nonlocal HAS_STOPPED
                 if HAS_STOPPED == False:
                     print("***Collision detected:{}***".format(event))
                     # stop the test
                     state_callback("STOP")
-                HAS_STOPPED=True
+                HAS_STOPPED = True
 
             collision_sensor.listen(lambda event: callback(event))
             # TODO: to keep sensor alive
@@ -366,9 +349,6 @@ class AdaptedVehicle(AdaptedActor):
         thread.start()
 
         return collision_sensor
-
-                
-        
 
 
 class AdaptedPedestrian(AdaptedActor):
