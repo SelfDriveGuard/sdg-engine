@@ -113,7 +113,7 @@ pedestrians = {pedestrian1, pedestrian2};
 
 // env
 time = 10:00;
-weather = {rain: 0.1};
+weather = {sunny: 0.8};
 env = Environment(time, weather);
 
 //traffic requirements

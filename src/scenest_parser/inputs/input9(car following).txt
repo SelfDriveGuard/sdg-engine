@@ -25,8 +25,8 @@ pedestrian2 = Pedestrian(((101, 62), ,0.5), , ((120, 144), ,0), pedestrian_type)
 pedestrians={pedestrian1, pedestrian2};
 
 // env
-time = 10:00;
-weather = {rain: 0.1};
+time = 18:00;
+weather = {rain: 0.6};
 env = Environment(time, weather);
 
 //traffic requirements

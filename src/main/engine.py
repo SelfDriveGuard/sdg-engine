@@ -124,7 +124,7 @@ class Engine(threading.Thread):
             params["address"] = os.environ.get("CARLA_SERVER_IP")
             scenario = scenic_parser.parse(self.code_file, params)
 
-            self.carla_adapter.init(scenario, self.map_name)
+            self.carla_adapter.init(scenario, self.map_name, self.callback)
             # Spectator
             # self.carla_adapter.set_spectator()
 

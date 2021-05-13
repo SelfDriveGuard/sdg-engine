@@ -10,8 +10,9 @@ class ScenicCarlaAdapter(CarlaAdapter):
         self.scene = None
         self.simulator = None
         self.simulate_thread = None
+        self.callback = None
 
-    def init(self, scenario, map_name):
+    def init(self, scenario, map_name, callback):
         self.scene, _ = scenario.generate()
         # set map before simulator is created
         if not map_name:
@@ -22,6 +23,7 @@ class ScenicCarlaAdapter(CarlaAdapter):
         # TODO: handle simulator init error
         self.simulator = scenario.getSimulator()
         self.simulator.render = False
+        self.callback = callback
 
         # TODO: whether need to wait
         # if not self.world.wait_for_tick(100.0):
@@ -40,7 +42,7 @@ class ScenicCarlaAdapter(CarlaAdapter):
     def run(self):
         # debug
         self.show_info()
-        self.simulate_thread = SimulateThread(self.simulator, self.scene)
+        self.simulate_thread = SimulateThread(self.simulator, self.scene, self.callback)
         self.simulate_thread.start()
 
     def stop(self):
@@ -61,16 +63,18 @@ class ScenicCarlaAdapter(CarlaAdapter):
 
 
 class SimulateThread(threading.Thread):
-    def __init__(self, simulator, scene):
+    def __init__(self, simulator, scene, callback):
         threading.Thread.__init__(self)
         self.simulator = simulator
         self.scene = scene
+        self.callback = callback
 
     def run(self):
         try:
             self.simulator.simulate(self.scene, verbosity=0)
         except Exception as exception:
-            print("Scenic error:{}".format(exception))
+            self.callback(cmd="ERROR", msg="Scenic error: {}".format(exception))
+            print("Scenic error: {}".format(exception))
 
     def stop(self):
         try:
