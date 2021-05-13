@@ -18,7 +18,7 @@ STEPS_PER_SEC = 10
 behavior LeadCarBehavior():
 	try:
 		do FollowLaneBehavior()
-	interrupt when simulation().currentTime > 100 * STEPS_PER_SEC:
+	interrupt when simulation().currentTime > 15 * STEPS_PER_SEC:
 		take SetBrakeAction(MAX_BREAK_THRESHOLD)
 
 
@@ -42,18 +42,19 @@ behavior FollowLeadCarBehavior():
 roads = network.roads
 
 # make sure to put '*' to uniformly randomly select from all elements of the list, 'network.roads'
-select_road = Uniform(*roads)
-select_lane = Uniform(*select_road.lanes)
-lane = Uniform(*network.lanes)
+select_road = network.roads[0]
+select_lane = select_road.lanes[0]
 
-other = Car on select_lane.centerline,
+lead_point = OrientedPoint on select_lane.centerline
+
+lead = Car at lead_point offset along roadDirection by 0 @ 20,
 		with behavior LeadCarBehavior()
 
-ego = Car following roadDirection from other for INITIAL_DISTANCE_APART,
+
+ego = Car following roadDirection from lead for INITIAL_DISTANCE_APART,
 		with behavior FollowLeadCarBehavior()
 
-start = OrientedPoint on lane.centerline
 
-av_ego = Car at start offset along roadDirection by 0 @ 7 ,
+av_ego = Car at lead_point offset along roadDirection by 0 @ 2 ,
 		with rolename "AV_EGO",
 		with behavior FollowLaneBehavior(10)

@@ -18,6 +18,7 @@ from src.tools.traffic_events import ViolationEvent, ViolationEventType
 from src.tools.utils import RepeatedTimer
 import shapely
 
+
 def calculate_velocity(actor):
     """
     Method to calculate the velocity of a actor
@@ -25,6 +26,7 @@ def calculate_velocity(actor):
     velocity_squared = actor.get_velocity().x**2
     velocity_squared += actor.get_velocity().y**2
     return math.sqrt(velocity_squared)
+
 
 class CriteriaManager(object):
 
@@ -41,9 +43,9 @@ class CriteriaManager(object):
     def __init__(self, carla_adapter, interval=1):
         self._interval = interval
         CriteriaManager._carla_adapter = carla_adapter
-        self._registry_criteria_list = []      
+        self._registry_criteria_list = []
         self.criteria_thread = None
-    
+
     def get_check_interval(self):
         """
         returns the interval of evalutaion and data collection
@@ -86,11 +88,11 @@ class CriteriaManager(object):
         """
         returns the location for the given actor
         """
-        
+
         for key in CriteriaManager._actor_location_map:
-            
+
             if key.id == actor.id:
-                
+
                 if len(CriteriaManager._actor_location_map[key]) > 0:
                     return CriteriaManager._actor_location_map[key][-1]
 
@@ -109,10 +111,11 @@ class CriteriaManager(object):
 
         print('{}.get_transform: {} not found!' .format(__name__, actor))
         return None
-    
+
     def start_to_evaluate(self):
-        self.criteria_thread = RepeatedTimer(self._interval, self.update) # auto starts
-    
+        self.criteria_thread = RepeatedTimer(
+            self._interval, self.update)  # auto starts
+
     def stop(self):
         if self.criteria_thread:
             self.criteria_thread.stop()
@@ -156,7 +159,6 @@ class CriteriaManager(object):
         for criteria in self._registry_criteria_list:
             criteria.update()
 
-
     def compute_global_statistics(self):
         """
         returns the score of a single test case
@@ -176,11 +178,12 @@ class CriteriaManager(object):
 
             global_score = 100
             for criteria in self._registry_criteria_list:
-                result = "FAILURE" if criteria.failure_count>0 else "SUCCESS"
+                result = "FAILURE" if criteria.failure_count > 0 else "SUCCESS"
                 if isinstance(criteria, CollisionTest):
                     actual_value = criteria.failure_count
                 else:
-                    actual_value = round(criteria.failure_count/criteria.test_count, 2) if criteria.test_count>0 else 0.0
+                    actual_value = round(
+                        criteria.failure_count/criteria.test_count, 2) if criteria.test_count > 0 else 0.0
                 global_score -= actual_value          
                 list_statistics.extend([[str(criteria), result, -actual_value]])
                 frontend_msg['list'].append({
@@ -188,7 +191,7 @@ class CriteriaManager(object):
                     'result':result,
                     'penalty':-actual_value
                 })
-            
+
             output += f">score:{global_score}\n"
             output += tabulate(list_statistics, tablefmt='fancy_grid')
             frontend_msg['score'] = global_score
@@ -211,7 +214,6 @@ class CriteriaManager(object):
         else:
             print('the criteria_thread did not start!')
 
-
     def save_global_record(self, route_record, sensors, total_routes, endpoint):
         """
         save global record to specific file: endpoint
@@ -226,6 +228,7 @@ class CriteriaManager(object):
         clean global record in specific file: endpoint
         """
         pass
+
 
 class Criterion:
 
@@ -262,12 +265,12 @@ class Criterion:
         self.list_traffic_events = []
 
     def __str__(self):
-            return f'{self.name}'
+        return f'{self.name}'
 
     def update(self):
-        
+
         self.test_count += 1
-        
+
 
 class MaxVelocityTest(Criterion):
 
@@ -301,11 +304,11 @@ class MaxVelocityTest(Criterion):
         Check velocity
         """
         super(MaxVelocityTest, self).update()
-        
+
         if self.actor is None:
             print('[warning]: no actor')
             return
-        
+
         # [m/s] -> [km/h]
         vel = self.actor.get_velocity()
         velocity = 3.6 * math.sqrt(vel.x ** 2 + vel.y ** 2 + vel.z ** 2)
@@ -315,8 +318,10 @@ class MaxVelocityTest(Criterion):
             self.failure_count += 1
             event_type = ViolationEventType.SPEED_LIMIT_EXCEEDED
             location = self.actor.get_location()
-            collision_event = ViolationEvent(event_type=event_type, location=location)
+            collision_event = ViolationEvent(
+                event_type=event_type, location=location)
             self.list_traffic_events.append(collision_event)
+
 
 class AverageVelocityTest(Criterion):
 
@@ -357,11 +362,11 @@ class AverageVelocityTest(Criterion):
         Check velocity
         """
         super(AverageVelocityTest, self).update()
-        
+
         location = self.actor.get_location()
 
         _last_location_dict = CriteriaManager.get_location(self.actor)
-        
+
         self._distance += location.distance(_last_location_dict['value'])
         self._last_location = location
 
@@ -375,8 +380,10 @@ class AverageVelocityTest(Criterion):
             self.failure_count += 1
             event_type = ViolationEventType.LOW_AVERAGE_VELOCITY
             location = self.actor.get_location()
-            collision_event = ViolationEvent(event_type=event_type, location=location)
+            collision_event = ViolationEvent(
+                event_type=event_type, location=location)
             self.list_traffic_events.append(collision_event)
+
 
 class CollisionTest(Criterion):
 
@@ -392,7 +399,8 @@ class CollisionTest(Criterion):
     - optional [optional]: If True, the result is not considered for an overall pass/fail result
     """
 
-    MIN_AREA_OF_COLLISION = 3       # If closer than this distance, the collision is ignored
+    # If closer than this distance, the collision is ignored
+    MIN_AREA_OF_COLLISION = 3
     MAX_AREA_OF_COLLISION = 5       # If further than this distance, the area is forgotten
     MAX_ID_TIME = 5                 # Amount of time the last collision if is remembered
 
@@ -405,9 +413,12 @@ class CollisionTest(Criterion):
 
         world = self.actor.get_world()
         blueprint = world.get_blueprint_library().find('sensor.other.collision')
-        self._collision_sensor = world.spawn_actor(blueprint, carla.Transform(), attach_to=self.actor)
-        self._collision_sensor.listen(lambda event: self._count_collisions(weakref.ref(self), event))
-        CriteriaManager._carla_adapter.actor_list.append(self._collision_sensor)
+        self._collision_sensor = world.spawn_actor(
+            blueprint, carla.Transform(), attach_to=self.actor)
+        self._collision_sensor.listen(
+            lambda event: self._count_collisions(weakref.ref(self), event))
+        CriteriaManager._carla_adapter.actor_list.append(
+            self._collision_sensor)
 
         self.other_actor = other_actor
         self.other_actor_type = other_actor_type
@@ -431,7 +442,8 @@ class CollisionTest(Criterion):
 
             # Get the distance to the collision point
             distance_vector = actor_location - collision_location
-            distance = math.sqrt(math.pow(distance_vector.x, 2) + math.pow(distance_vector.y, 2))
+            distance = math.sqrt(
+                math.pow(distance_vector.x, 2) + math.pow(distance_vector.y, 2))
 
             # If far away from a previous collision, forget it
             if distance <= self.MAX_AREA_OF_COLLISION:
@@ -441,7 +453,6 @@ class CollisionTest(Criterion):
 
         if self.last_id and _last_location_dict['elapsed_seconds'] - self.collision_time > self.MAX_ID_TIME:
             self.last_id = None
-        
 
     @staticmethod
     def _count_collisions(weak_self, event):     # pylint: disable=too-many-return-statements
@@ -451,7 +462,7 @@ class CollisionTest(Criterion):
         self = weak_self()
         if not self:
             return
-        
+
         _last_location_dict = CriteriaManager.get_location(self.actor)
         actor_location = _last_location_dict['value']
 
@@ -477,7 +488,8 @@ class CollisionTest(Criterion):
         for collision_location in self.registered_collisions:
 
             distance_vector = actor_location - collision_location
-            distance = math.sqrt(math.pow(distance_vector.x, 2) + math.pow(distance_vector.y, 2))
+            distance = math.sqrt(
+                math.pow(distance_vector.x, 2) + math.pow(distance_vector.y, 2))
 
             if distance <= self.MIN_AREA_OF_COLLISION:
                 return
@@ -492,7 +504,8 @@ class CollisionTest(Criterion):
         else:
             return
 
-        collision_event = ViolationEvent(event_type=actor_type, location=actor_location)
+        collision_event = ViolationEvent(
+            event_type=actor_type, location=actor_location)
         collision_event.set_message(
             "Agent collided against object with type={} and id={} at (x={}, y={}, z={})".format(
                 event.other_actor.type_id,
@@ -510,6 +523,7 @@ class CollisionTest(Criterion):
         # Number 0: static objects -> ignore it
         if event.other_actor.id != 0:
             self.last_id = event.other_actor.id
+
 
 class ActorSpeedAboveThresholdTest(Criterion):
 
@@ -548,10 +562,13 @@ class ActorSpeedAboveThresholdTest(Criterion):
                     self.failure_count += 1
 
                     # record event
-                    _last_location_dict = CriteriaManager.get_location(self.actor)
+                    _last_location_dict = CriteriaManager.get_location(
+                        self.actor)
                     vehicle_location = _last_location_dict['value']
-                    blocked_event = ViolationEvent(event_type=ViolationEventType.VEHICLE_BLOCKED, location=vehicle_location)
-                    ActorSpeedAboveThresholdTest._set_event_message(blocked_event, vehicle_location)
+                    blocked_event = ViolationEvent(
+                        event_type=ViolationEventType.VEHICLE_BLOCKED, location=vehicle_location)
+                    ActorSpeedAboveThresholdTest._set_event_message(
+                        blocked_event, vehicle_location)
                     self.list_traffic_events.append(blocked_event)
             else:
                 self._time_last_valid_state = _last_velocity_dict['elapsed_seconds']
@@ -563,7 +580,8 @@ class ActorSpeedAboveThresholdTest(Criterion):
         """
 
         event.set_message('Agent got blocked at (x={}, y={}, z={})'.format(round(location.x, 3),
-                                                                           round(location.y, 3),
+                                                                           round(
+                                                                               location.y, 3),
                                                                            round(location.z, 3)))
 
 
@@ -584,8 +602,10 @@ class KeepLaneTest(Criterion):
 
         world = self.actor.get_world()
         blueprint = world.get_blueprint_library().find('sensor.other.lane_invasion')
-        self._lane_sensor = world.spawn_actor(blueprint, carla.Transform(), attach_to=self.actor)
-        self._lane_sensor.listen(lambda event: self._count_lane_invasion(weakref.ref(self), event))
+        self._lane_sensor = world.spawn_actor(
+            blueprint, carla.Transform(), attach_to=self.actor)
+        self._lane_sensor.listen(
+            lambda event: self._count_lane_invasion(weakref.ref(self), event))
         CriteriaManager._carla_adapter.actor_list.append(self._lane_sensor)
 
     def update(self):
@@ -605,8 +625,10 @@ class KeepLaneTest(Criterion):
         self.failure_count += 1
         event_type = ViolationEventType.LANE_INVASION
         location = self.actor.get_location()
-        lane_invasion_event = ViolationEvent(event_type=event_type, location=location)
+        lane_invasion_event = ViolationEvent(
+            event_type=event_type, location=location)
         self.list_traffic_events.append(lane_invasion_event)
+
 
 class OffRoadTest(Criterion):
 
@@ -629,7 +651,7 @@ class OffRoadTest(Criterion):
         Setup of the variables
         """
         super(OffRoadTest, self).__init__(name, actor, 0, None, optional)
-        
+
         self._offroad = False
 
         self._duration = duration
@@ -678,11 +700,13 @@ class OffRoadTest(Criterion):
             self._prev_time = None
 
         if self._time_offroad > self._duration:
-            self.failure_count+=1
+            self.failure_count += 1
             event_type = ViolationEventType.OFF_ROAD
             location = self.actor.get_location()
-            off_road_event = ViolationEvent(event_type=event_type, location=location)
+            off_road_event = ViolationEvent(
+                event_type=event_type, location=location)
             self.list_traffic_events.append(off_road_event)
+
 
 class OnSidewalkTest(Criterion):
 
@@ -729,13 +753,13 @@ class OnSidewalkTest(Criterion):
                 driving lanes and terminate_on_failure is active
             py_trees.common.Status.RUNNING: the rest of the time
         """
-        
 
         # Some of the vehicle parameters
         _last_transform_dict = CriteriaManager.get_transform(self._actor)
         current_tra = _last_transform_dict['value']
         current_loc = current_tra.location
-        current_wp = self._map.get_waypoint(current_loc, lane_type=carla.LaneType.Any)
+        current_wp = self._map.get_waypoint(
+            current_loc, lane_type=carla.LaneType.Any)
 
         # Case 1) Car center is at a sidewalk
         if current_wp.lane_type == carla.LaneType.Sidewalk:
@@ -750,17 +774,23 @@ class OnSidewalkTest(Criterion):
             # Get the vertices of the vehicle
             heading_vec = current_tra.get_forward_vector()
             heading_vec.z = 0
-            heading_vec = heading_vec / math.sqrt(math.pow(heading_vec.x, 2) + math.pow(heading_vec.y, 2))
-            perpendicular_vec = carla.Vector3D(-heading_vec.y, heading_vec.x, 0)
+            heading_vec = heading_vec / \
+                math.sqrt(math.pow(heading_vec.x, 2) +
+                          math.pow(heading_vec.y, 2))
+            perpendicular_vec = carla.Vector3D(-heading_vec.y,
+                                               heading_vec.x, 0)
 
             extent = self.actor.bounding_box.extent
             x_boundary_vector = heading_vec * extent.x
             y_boundary_vector = perpendicular_vec * extent.y
 
             bbox = [
-                current_loc + carla.Location(x_boundary_vector - y_boundary_vector),
-                current_loc + carla.Location(x_boundary_vector + y_boundary_vector),
-                current_loc + carla.Location(-1 * x_boundary_vector - y_boundary_vector),
+                current_loc +
+                carla.Location(x_boundary_vector - y_boundary_vector),
+                current_loc +
+                carla.Location(x_boundary_vector + y_boundary_vector),
+                current_loc +
+                carla.Location(-1 * x_boundary_vector - y_boundary_vector),
                 current_loc + carla.Location(-1 * x_boundary_vector + y_boundary_vector)]
 
             bbox_wp = [
@@ -789,7 +819,8 @@ class OnSidewalkTest(Criterion):
                     self._sidewalk_start_location = current_loc
 
             else:
-                distance_vehicle_wp = current_loc.distance(current_wp.transform.location)
+                distance_vehicle_wp = current_loc.distance(
+                    current_wp.transform.location)
 
                 # Case 2.3) Outside lane
                 if distance_vehicle_wp >= current_wp.lane_width / 2:
@@ -838,7 +869,8 @@ class OnSidewalkTest(Criterion):
             # Register the sidewalk event
             if not self._onsidewalk_active:
 
-                onsidewalk_event = ViolationEvent(event_type=ViolationEventType.ON_SIDEWALK_INFRACTION, location=self._sidewalk_start_location)
+                onsidewalk_event = ViolationEvent(
+                    event_type=ViolationEventType.ON_SIDEWALK_INFRACTION, location=self._sidewalk_start_location)
                 self._set_event_message(
                     onsidewalk_event, self._sidewalk_start_location)
 
@@ -848,7 +880,8 @@ class OnSidewalkTest(Criterion):
             # Register the outside of a lane event
             if not self._outside_lane_active:
 
-                outsidelane_event = ViolationEvent(event_type=ViolationEventType.OUTSIDE_LANE_INFRACTION, location=self._outside_lane_start_location)
+                outsidelane_event = ViolationEvent(
+                    event_type=ViolationEventType.OUTSIDE_LANE_INFRACTION, location=self._outside_lane_start_location)
                 self._set_event_message(
                     outsidelane_event, self._outside_lane_start_location)
 
@@ -870,6 +903,7 @@ class OnSidewalkTest(Criterion):
                 round(location.x, 3),
                 round(location.y, 3),
                 round(location.z, 3)))
+
 
 class WrongLaneTest(Criterion):
 
@@ -897,7 +931,8 @@ class WrongLaneTest(Criterion):
         self._in_lane = True
         self._wrong_distance = 0
         self._actor_location = self._actor.get_location()
-        self._previous_lane_waypoint = self._map.get_waypoint(self._actor.get_location())
+        self._previous_lane_waypoint = self._map.get_waypoint(
+            self._actor.get_location())
         self._wrong_lane_start_location = None
 
     def update(self):
@@ -921,8 +956,10 @@ class WrongLaneTest(Criterion):
             previous_lane_direction = self._previous_lane_waypoint.transform.get_forward_vector()
             current_lane_direction = lane_waypoint.transform.get_forward_vector()
 
-            p_lane_vector = np.array([previous_lane_direction.x, previous_lane_direction.y])
-            c_lane_vector = np.array([current_lane_direction.x, current_lane_direction.y])
+            p_lane_vector = np.array(
+                [previous_lane_direction.x, previous_lane_direction.y])
+            c_lane_vector = np.array(
+                [current_lane_direction.x, current_lane_direction.y])
 
             waypoint_angle = math.degrees(
                 math.acos(np.clip(np.dot(p_lane_vector, c_lane_vector) /
@@ -958,7 +995,8 @@ class WrongLaneTest(Criterion):
 
         # Keep adding "meters" to the counter
         distance_vector = self._actor.get_location() - self._actor_location
-        distance = math.sqrt(math.pow(distance_vector.x, 2) + math.pow(distance_vector.y, 2))
+        distance = math.sqrt(math.pow(distance_vector.x, 2) +
+                             math.pow(distance_vector.y, 2))
 
         if distance >= 0.02:  # Used to avoid micro-changes adding add to considerable sums
             _last_location_dict = CriteriaManager.get_location(self._actor)
@@ -970,7 +1008,8 @@ class WrongLaneTest(Criterion):
         # Register the event
         if self._in_lane and self._wrong_distance > 0:
 
-            wrong_way_event = ViolationEvent(event_type=ViolationEventType.WRONG_WAY_INFRACTION, location=self._wrong_lane_start_location)
+            wrong_way_event = ViolationEvent(
+                event_type=ViolationEventType.WRONG_WAY_INFRACTION, location=self._wrong_lane_start_location)
             self._set_event_message(wrong_way_event, self._wrong_lane_start_location,
                                     self._wrong_distance, current_road_id, current_lane_id)
 
@@ -997,9 +1036,11 @@ class WrongLaneTest(Criterion):
                 road_id,
                 lane_id))
 
+
 class InRadiusRegionTest(Criterion):
     # TODO:检查某个actor是否顺利到达了指定的终点
     pass
+
 
 class RunningRedLightTest(Criterion):
 
@@ -1034,8 +1075,10 @@ class RunningRedLightTest(Criterion):
         """
         check if vehicle crosses a line segment
         """
-        line1 = shapely.geometry.LineString([(seg1[0].x, seg1[0].y), (seg1[1].x, seg1[1].y)])
-        line2 = shapely.geometry.LineString([(seg2[0].x, seg2[0].y), (seg2[1].x, seg2[1].y)])
+        line1 = shapely.geometry.LineString(
+            [(seg1[0].x, seg1[0].y), (seg1[1].x, seg1[1].y)])
+        line2 = shapely.geometry.LineString(
+            [(seg2[0].x, seg2[0].y), (seg2[1].x, seg2[1].y)])
         inter = line1.intersection(line2)
 
         return not inter.is_empty
@@ -1044,7 +1087,7 @@ class RunningRedLightTest(Criterion):
         """
         Check if the actor is running a red light
         """
-        
+
         _last_transform_dict = CriteriaManager.get_transform(self._actor)
         transform = _last_transform_dict['value']
         location = transform.location
@@ -1053,10 +1096,12 @@ class RunningRedLightTest(Criterion):
 
         veh_extent = self._actor.bounding_box.extent.x
 
-        tail_close_pt = self.rotate_point(carla.Vector3D(-0.8 * veh_extent, 0.0, location.z), transform.rotation.yaw)
+        tail_close_pt = self.rotate_point(
+            carla.Vector3D(-0.8 * veh_extent, 0.0, location.z), transform.rotation.yaw)
         tail_close_pt = location + carla.Location(tail_close_pt)
 
-        tail_far_pt = self.rotate_point(carla.Vector3D(-veh_extent - 1, 0.0, location.z), transform.rotation.yaw)
+        tail_far_pt = self.rotate_point(
+            carla.Vector3D(-veh_extent - 1, 0.0, location.z), transform.rotation.yaw)
         tail_far_pt = location + carla.Location(tail_far_pt)
 
         for traffic_light, center, waypoints in self._list_traffic_lights:
@@ -1075,7 +1120,8 @@ class RunningRedLightTest(Criterion):
                 tail_wp = self._map.get_waypoint(tail_far_pt)
 
                 # Calculate the dot product (Might be unscaled, as only its sign is important)
-                _last_transform_dict = CriteriaManager.get_transform(self._actor)
+                _last_transform_dict = CriteriaManager.get_transform(
+                    self._actor)
                 ve_dir = _last_transform_dict['value'].get_forward_vector()
                 wp_dir = wp.transform.get_forward_vector()
                 dot_ve_wp = ve_dir.x * wp_dir.x + ve_dir.y * wp_dir.y + ve_dir.z * wp_dir.z
@@ -1087,9 +1133,11 @@ class RunningRedLightTest(Criterion):
                     lane_width = wp.lane_width
                     location_wp = wp.transform.location
 
-                    lft_lane_wp = self.rotate_point(carla.Vector3D(0.4 * lane_width, 0.0, location_wp.z), yaw_wp + 90)
+                    lft_lane_wp = self.rotate_point(carla.Vector3D(
+                        0.4 * lane_width, 0.0, location_wp.z), yaw_wp + 90)
                     lft_lane_wp = location_wp + carla.Location(lft_lane_wp)
-                    rgt_lane_wp = self.rotate_point(carla.Vector3D(0.4 * lane_width, 0.0, location_wp.z), yaw_wp - 90)
+                    rgt_lane_wp = self.rotate_point(carla.Vector3D(
+                        0.4 * lane_width, 0.0, location_wp.z), yaw_wp - 90)
                     rgt_lane_wp = location_wp + carla.Location(rgt_lane_wp)
 
                     # Is the vehicle traversing the stop line?
@@ -1097,7 +1145,8 @@ class RunningRedLightTest(Criterion):
 
                         self.failure_count += 1
                         location = traffic_light.get_transform().location
-                        red_light_event = ViolationEvent(event_type=ViolationEventType.TRAFFIC_LIGHT_INFRACTION, location=location)
+                        red_light_event = ViolationEvent(
+                            event_type=ViolationEventType.TRAFFIC_LIGHT_INFRACTION, location=location)
                         red_light_event.set_message(
                             "Agent ran a red light {} at (x={}, y={}, z={})".format(
                                 traffic_light.id,
@@ -1113,8 +1162,10 @@ class RunningRedLightTest(Criterion):
         """
         rotate a given point by a given angle
         """
-        x_ = math.cos(math.radians(angle)) * point.x - math.sin(math.radians(angle)) * point.y
-        y_ = math.sin(math.radians(angle)) * point.x + math.cos(math.radians(angle)) * point.y
+        x_ = math.cos(math.radians(angle)) * point.x - \
+            math.sin(math.radians(angle)) * point.y
+        y_ = math.sin(math.radians(angle)) * point.x + \
+            math.cos(math.radians(angle)) * point.y
         return carla.Vector3D(x_, y_, point.z)
 
     def get_traffic_light_waypoints(self, traffic_light):
@@ -1123,15 +1174,18 @@ class RunningRedLightTest(Criterion):
         """
         base_transform = traffic_light.get_transform()
         base_rot = base_transform.rotation.yaw
-        area_loc = base_transform.transform(traffic_light.trigger_volume.location)
+        area_loc = base_transform.transform(
+            traffic_light.trigger_volume.location)
 
         # Discretize the trigger box into points
         area_ext = traffic_light.trigger_volume.extent
-        x_values = np.arange(-0.9 * area_ext.x, 0.9 * area_ext.x, 1.0)  # 0.9 to avoid crossing to adjacent lanes
+        # 0.9 to avoid crossing to adjacent lanes
+        x_values = np.arange(-0.9 * area_ext.x, 0.9 * area_ext.x, 1.0)
 
         area = []
         for x in x_values:
-            point = self.rotate_point(carla.Vector3D(x, 0, area_ext.z), base_rot)
+            point = self.rotate_point(
+                carla.Vector3D(x, 0, area_ext.z), base_rot)
             point_location = area_loc + carla.Location(x=point.x, y=point.y)
             area.append(point_location)
 
@@ -1155,6 +1209,7 @@ class RunningRedLightTest(Criterion):
             wps.append(wpx)
 
         return area_loc, wps
+
 
 class RunningStopTest(Criterion):
 
@@ -1197,9 +1252,12 @@ class RunningStopTest(Criterion):
         """
 
         # pylint: disable=invalid-name
-        A = carla.Vector2D(bb_center.x - bb_extent.x, bb_center.y - bb_extent.y)
-        B = carla.Vector2D(bb_center.x + bb_extent.x, bb_center.y - bb_extent.y)
-        D = carla.Vector2D(bb_center.x - bb_extent.x, bb_center.y + bb_extent.y)
+        A = carla.Vector2D(bb_center.x - bb_extent.x,
+                           bb_center.y - bb_extent.y)
+        B = carla.Vector2D(bb_center.x + bb_extent.x,
+                           bb_center.y - bb_extent.y)
+        D = carla.Vector2D(bb_center.x - bb_extent.x,
+                           bb_center.y + bb_extent.y)
         M = carla.Vector2D(point.x, point.y)
 
         AB = B - A
@@ -1300,7 +1358,8 @@ class RunningStopTest(Criterion):
                     # did we stop?
                     self.failure_count += 1
                     stop_location = self._target_stop_sign.get_transform().location
-                    running_stop_event = ViolationEvent(event_type=ViolationEventType.STOP_INFRACTION, location=stop_location)
+                    running_stop_event = ViolationEvent(
+                        event_type=ViolationEventType.STOP_INFRACTION, location=stop_location)
                     running_stop_event.set_message(
                         "Agent ran a stop with id={} at (x={}, y={}, z={})".format(
                             self._target_stop_sign.id,
