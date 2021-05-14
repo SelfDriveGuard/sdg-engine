@@ -166,7 +166,7 @@ class CriteriaManager(object):
         """
         if self.criteria_thread:
             # Create the title of sheet
-            output = "====== Result of Test ======"
+            output = "====== Test Results Based on Evaluation Criteria ======"
             output += "\n"
 
             # Criteria the content of sheet
