@@ -165,17 +165,16 @@ class CriteriaManager(object):
         output the score sheet to the console
         """
         if self.criteria_thread:
-            # Create the title of sheet
-            output = "====== Test Results Based on Evaluation Criteria ======"
-            output += "\n"
-
-            # Criteria the content of sheet
-            header = ['Criterion', 'Result', 'Penalty']
-            list_statistics = [header]
+            # Initialize the frontend msg
             frontend_msg = {
                 'list': []
             }
 
+            # Initialize the console tabulate
+            header = ['Criterion', 'Result', 'Penalty']
+            list_statistics = [header]
+
+            # Compute penalty
             global_score = 100
             for criteria in self._registry_criteria_list:
                 result = "FAILURE" if criteria.failure_count > 0 else "SUCCESS"
@@ -192,9 +191,14 @@ class CriteriaManager(object):
                     'penalty':-actual_value
                 })
 
+            # Complete the frontend msg
+            frontend_msg['score'] = global_score
+
+            # Complete the console tabulate
+            output = "====== Result of Test ======"
+            output += "\n"
             output += f">score:{global_score}\n"
             output += tabulate(list_statistics, tablefmt='fancy_grid')
-            frontend_msg['score'] = global_score
 
             print(output)
             return frontend_msg
