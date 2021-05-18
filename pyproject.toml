@@ -17,6 +17,8 @@ metric-temporal-logic = "^0.2.2"
 scenic = "^2.0.0"
 tabulate = "^0.7.5"
 pip = "^1.7.1"
+opencv-python = "^4.2.0"
+Flask = "^2.0.0"
 
 [tool.poetry.dev-dependencies]
 autopep8 = "^1.5.4"
