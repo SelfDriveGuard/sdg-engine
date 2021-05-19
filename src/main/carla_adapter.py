@@ -5,6 +5,7 @@ import math
 from src.tools.auto_criteria import *
 from src.tools.utils import RepeatedTimer
 import time
+import src.tools.global_var as glv
 
 
 class CarlaAdapter:
@@ -43,15 +44,16 @@ class CarlaAdapter:
         sensor_blueprint.set_attribute('image_size_y', '540')
         sensor_blueprint.set_attribute('fov', '110')
         # Set the time in seconds between sensor captures
-        sensor_blueprint.set_attribute('sensor_tick', '0.05')
+        sensor_blueprint.set_attribute('sensor_tick', '0.0')
         transform = carla.Transform(
             carla.Location(x=-4, z=1.9))
         sensor = self.world.spawn_actor(
             sensor_blueprint, transform, attach_to=self.spectator)
         self.actor_list.append(sensor)
+        sensor.listen(lambda data: glv.get("queue_global").put(data))
 
         print(
-            "Sensor created:{}-{}".format(sensor.id, sensor.type_id))
+            "Spectator created:{}-{}".format(sensor.id, sensor.type_id))
 
     # WASD Move spectator
 
