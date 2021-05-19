@@ -239,6 +239,21 @@ class Engine(threading.Thread):
             # 发送状态信息给前端页面
             self.callback(cmd="READY", msg="Ego launched")
 
+            # attach front camera
+            self.carla_adapter.attach_live_camera(
+                self.autoware_adapter.ego_actor,
+                glv.get("queue_front"),
+                transform={
+                    "x": 0.5,
+                    "y": 0,
+                    "z": 2,
+                    "roll": 0,
+                    "pitch": -5,
+                    "yaw": 0
+                },
+                fov = 100
+            )
+
             # Send target
             self.autoware_adapter.send_target()
             print("[Wait]Checking target...")
@@ -246,7 +261,7 @@ class Engine(threading.Thread):
             print("Ego start to drive")
             print("Start to create others")
             # clear video queue
-            video_server.hard_clear_queue(glv.get("queue_global"))
+            video_server.clear_all_queues()
             # 发送状态信息给前端页面
             self.callback(cmd="DRIVING", msg="Ego start to drive")
             # check time limit

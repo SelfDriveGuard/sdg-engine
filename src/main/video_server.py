@@ -12,16 +12,20 @@ from src.tools.utils import stop_thread
 app = Flask(__name__)
 flask_thread = None
 STOP_FLAG = False
+queue_list = []
 
 def init():
+    global queue_list
     glv.set("queue_front", queue.Queue())
+    queue_list.append(glv.get("queue_front"))
     glv.set("queue_global", queue.Queue())
+    queue_list.append(glv.get("queue_global"))
 
 def run():
     global flask_thread
     global STOP_FLAG
     STOP_FLAG = False
-    flask_thread = threading.Thread(target=app.run, kwargs={"debug":False, "use_reloader": False, "host":"0.0.0.0", "port":9011})
+    flask_thread = threading.Thread(target=app.run, kwargs={"debug":False, "use_reloader": False, "host":"0.0.0.0", "port":8096})
     print("Video server start")
     flask_thread.start()
 
@@ -33,6 +37,11 @@ def stop():
         print("Video server stop")
         stop_thread(flask_thread)
         flask_thread = None
+
+def clear_all_queues():
+    global queue_list
+    for q in queue_list:
+        hard_clear_queue(q)
 
 def hard_clear_queue(this_queue):
     while this_queue.qsize() > 3:
@@ -67,8 +76,14 @@ def gen_frames(this_queue):
             if qsize < 10:
                 time.sleep(0.1) # 10fps
             elif qsize < 50:
-                time.sleep(0.04) # 24(round)fps
+                time.sleep(0.05) # 20 fps
+            else:
+                time.sleep(1/24) # 24fps
 
-@app.route('/global_view')
-def video_feed():
+@app.route('/global')
+def video_global():
     return Response(gen_frames(glv.get("queue_global")), mimetype='multipart/x-mixed-replace; boundary=frame')
+
+@app.route('/front')
+def video_front():
+    return Response(gen_frames(glv.get("queue_front")), mimetype='multipart/x-mixed-replace; boundary=frame')
