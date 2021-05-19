@@ -17,6 +17,7 @@ import src.tools.global_var as glv
 import numpy as np
 import mtl
 import queue
+from src.main import video_server
 
 
 class Engine(threading.Thread):
@@ -55,8 +56,9 @@ class Engine(threading.Thread):
 
         # init global var
         glv._init()
-        glv._set("queue_front", queue.Queue())
-        glv._set("queue_global", queue.Queue())
+
+        # init video server
+        video_server.init()
 
     def run(self):
         if os.environ.get("CARLA_SERVER_IP") == None:
@@ -98,8 +100,8 @@ class Engine(threading.Thread):
 
     def start_test(self):
 
-        # Spectator
-        # self.carla_adapter.set_spectator()
+        # start video server
+        video_server.run()
 
         if self.language == "scenest":
             try:
@@ -186,6 +188,9 @@ class Engine(threading.Thread):
         if self.time_count_thread is not None:
             self.time_count_thread.cancel()
 
+        # stop video server
+        video_server.stop()
+
         # stop infomation collector
         self.autoware_adapter.adapted_ego.stop_collect()
         infomation_dict = self.autoware_adapter.adapted_ego.infomation_dict
@@ -240,6 +245,8 @@ class Engine(threading.Thread):
         elif state == "DRIVING":
             print("Ego start to drive")
             print("Start to create others")
+            # clear video queue
+            video_server.hard_clear_queue(glv.get("queue_global"))
             # 发送状态信息给前端页面
             self.callback(cmd="DRIVING", msg="Ego start to drive")
             # check time limit

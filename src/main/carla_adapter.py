@@ -50,6 +50,7 @@ class CarlaAdapter:
         sensor = self.world.spawn_actor(
             sensor_blueprint, transform, attach_to=self.spectator)
         self.actor_list.append(sensor)
+        # queue_global is init in video_server
         sensor.listen(lambda data: glv.get("queue_global").put(data))
 
         print(
