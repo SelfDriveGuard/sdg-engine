@@ -13,8 +13,10 @@ from src.tools import utils
 from src.scenic_parser import parser as scenic_parser
 from src.tools.auto_criteria import CriteriaManager
 from src.tools.utils import RepeatedTimer
+import src.tools.global_var as glv
 import numpy as np
 import mtl
+import queue
 
 
 class Engine(threading.Thread):
@@ -50,6 +52,11 @@ class Engine(threading.Thread):
 
         # 评分
         self.criteria_manager = None
+
+        # init global var
+        glv._init()
+        glv._set("queue_front", queue.Queue())
+        glv._set("queue_global", queue.Queue())
 
     def run(self):
         if os.environ.get("CARLA_SERVER_IP") == None:
