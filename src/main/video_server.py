@@ -74,11 +74,11 @@ def gen_frames(this_queue):
             yield (b'--frame\r\n'
                     b'Content-Type: image/jpeg\r\n\r\n' + frame + b'\r\n')  # concat frame one by one and show result
             if qsize < 10:
+                time.sleep(0.2) # 5fps
+            elif qsize < 100:
                 time.sleep(0.1) # 10fps
-            elif qsize < 50:
-                time.sleep(0.05) # 20 fps
             else:
-                time.sleep(1/24) # 24fps
+                time.sleep(1/15) # 15fps
 
 @app.route('/global')
 def video_global():
