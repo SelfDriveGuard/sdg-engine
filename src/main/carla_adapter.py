@@ -120,6 +120,33 @@ class CarlaAdapter:
         transform = carla.Transform(self.spectator.get_location(), rotation)
         return transform
 
+    def attach_live_camera(self, actor, image_queue, transform={
+        "x": 0,
+        "y": 0,
+        "z": 0,
+        "roll": 0,
+        "pitch": 0,
+        "yaw": 0
+    }, fov=100):
+        # Find the blueprint of the sensor.
+        blueprint = self.world.get_blueprint_library().find('sensor.camera.rgb')
+        # Modify the attributes of the blueprint to set image resolution and field of view.
+        blueprint.set_attribute('image_size_x', '960')
+        blueprint.set_attribute('image_size_y', '540')
+        blueprint.set_attribute('fov', str(fov))
+        # Set the time in seconds between sensor captures
+        blueprint.set_attribute('sensor_tick', '0.0')
+
+        camera_rgb = self.world.spawn_actor(
+            blueprint,
+            carla.Transform(carla.Location(x=transform["x"], y=transform["y"], z=transform["z"]), carla.Rotation(
+                pitch=transform["pitch"], roll=transform["roll"], yaw=transform["yaw"])),
+            attach_to=actor)
+
+        camera_rgb.listen(lambda data: image_queue.put(data))
+
+        self.actor_list.append(camera_rgb)
+
     def stop(self):
         if len(self.actor_list) > 0:
             actor_ids = [x.id for x in self.actor_list]
@@ -127,10 +154,10 @@ class CarlaAdapter:
                 [carla.command.DestroyActor(x) for x in actor_ids])
         self.actor_list = []
 
-        # actor_list = [x for x in self.world.get_actors() if x.type_id.split(".")[0] == "vehicle" or x.type_id.split(
-        #     ".")[0] == "walker" or x.type_id.split(".")[0] == "sensor" or x.type_id.split(".")[0] == "controller"]
-        # self.client.apply_batch([carla.command.DestroyActor(x)
-        #                          for x in actor_list])
+        actor_list = [x for x in self.world.get_actors() if x.type_id.split(".")[0] == "vehicle" or x.type_id.split(
+            ".")[0] == "walker" or x.type_id.split(".")[0] == "sensor" or x.type_id.split(".")[0] == "controller"]
+        self.client.apply_batch([carla.command.DestroyActor(x)
+                                 for x in actor_list])
 
 
 class AdaptedActor:
