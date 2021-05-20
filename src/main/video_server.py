@@ -83,7 +83,7 @@ def gen_frames(this_queue):
             if qsize > 3:
                 print("Video not done yet, {} now size:{}".format(this_queue, qsize))
             else:
-                this_queue.task_donw()
+                this_queue.task_down()
                 print("{} Done".format(this_queue))
                 break
         if qsize < 3:
