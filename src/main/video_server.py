@@ -13,6 +13,7 @@ app = Flask(__name__)
 flask_thread = None
 STOP_FLAG = False
 queue_list = []
+stop_count = 0
 
 def init():
     global queue_list
@@ -32,7 +33,27 @@ def run():
 def stop():
     global flask_thread
     global STOP_FLAG
+    global queue_list
+    # while True:
+    #     FINISH_FLAG = True
+    #     for q in queue_list:
+    #         if q.qsize() > 0:
+    #             FINISH_FLAG = False
+    #             print("Video not done yet, {} now size:{}".format(q, q.qsize()))
+    #             break
+    #     if FINISH_FLAG:
+    #         break
     STOP_FLAG = True
+
+    for q in queue_list:
+        q.join()
+        
+    if flask_thread is not None:
+        print("Video server stop")
+        stop_thread(flask_thread)
+        flask_thread = None
+
+def kill_server():
     if flask_thread is not None:
         print("Video server stop")
         stop_thread(flask_thread)
@@ -57,11 +78,14 @@ def gen_frames(this_queue):
     global front_view_queue
     global STOP_FLAG
     while True:
-        if STOP_FLAG:
-            break
-        # print("*"*this_queue.qsize())
-        # print("Queue Size:{}".format(this_queue.qsize()))
         qsize = this_queue.qsize()
+        if STOP_FLAG:
+            if qsize > 3:
+                print("Video not done yet, {} now size:{}".format(this_queue, qsize))
+            else:
+                this_queue.task_donw()
+                print("{} Done".format(this_queue))
+                break
         if qsize < 3:
             # print("waiting")
             time.sleep(0.1)

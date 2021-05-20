@@ -188,9 +188,6 @@ class Engine(threading.Thread):
         if self.time_count_thread is not None:
             self.time_count_thread.cancel()
 
-        # stop video server
-        video_server.stop()
-
         # stop infomation collector
         self.autoware_adapter.adapted_ego.stop_collect()
         infomation_dict = self.autoware_adapter.adapted_ego.infomation_dict
@@ -201,6 +198,18 @@ class Engine(threading.Thread):
             "yDyPosition": [l.y for l in infomation_dict["location"]]
         }
         self.callback(cmd="RES", msg=infomation_dict_return)
+
+        # 结束arla_adapter和autoware_adapter
+        print("Stoping engine")
+        if self.autoware_adapter.ego_has_spawned():
+            self.autoware_adapter.stop()
+        self.carla_adapter.stop()
+        self.trace = []
+        self.time = -1
+        self.time_count_thread = None
+
+        # stop video server
+        video_server.stop()
 
         # 发送状态信息给前端页面
         self.callback(cmd="STOP", msg="Ego reached target")
@@ -218,14 +227,7 @@ class Engine(threading.Thread):
         self.criteria_manager.stop()
         self.callback(cmd="CRITERIA", msg=global_statistics)
 
-        # 结束arla_adapter和autoware_adapter
-        print("Stoping engine")
-        if self.autoware_adapter.ego_has_spawned():
-            self.autoware_adapter.stop()
-        self.carla_adapter.stop()
-        self.trace = []
-        self.time = -1
-        self.time_count_thread = None
+
 
     # TODO: make message constant
     # state:
