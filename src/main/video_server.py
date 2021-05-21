@@ -43,10 +43,18 @@ def stop():
     #             break
     #     if FINISH_FLAG:
     #         break
+
+    max_qsize = 0
+    for q in queue_list:
+        if q.qsize() > max_qsize:
+            max_qsize = q.qsize()
+    print("max size:{}".format(max_qsize))
+    time.sleep(max_qsize*0.1)
+
     STOP_FLAG = True
 
-    for q in queue_list:
-        q.join()
+    # for q in queue_list:
+    #     q.join()
         
     if flask_thread is not None:
         print("Video server stop")
@@ -54,6 +62,7 @@ def stop():
         flask_thread = None
 
 def kill_server():
+    global flask_thread
     if flask_thread is not None:
         print("Video server stop")
         stop_thread(flask_thread)
@@ -80,12 +89,7 @@ def gen_frames(this_queue):
     while True:
         qsize = this_queue.qsize()
         if STOP_FLAG:
-            if qsize > 3:
-                print("Video not done yet, {} now size:{}".format(this_queue, qsize))
-            else:
-                this_queue.task_done()
-                print("{} Done".format(this_queue))
-                break
+            break
         if qsize < 3:
             # print("waiting")
             time.sleep(0.1)
@@ -97,9 +101,9 @@ def gen_frames(this_queue):
             frame = buffer.tobytes()
             yield (b'--frame\r\n'
                     b'Content-Type: image/jpeg\r\n\r\n' + frame + b'\r\n')  # concat frame one by one and show result
-            if qsize < 10:
-                time.sleep(0.2) # 5fps
-            elif qsize < 100:
+            # if qsize < 10:
+            #     time.sleep(0.2) # 5fps
+            if qsize < 100:
                 time.sleep(0.1) # 10fps
             else:
                 time.sleep(1/15) # 15fps
