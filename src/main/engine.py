@@ -60,7 +60,14 @@ class Engine(threading.Thread):
         # init video server
         video_server.init()
 
+
     def run(self):
+        self.callback(cmd="STAGE", msg={
+            "code": "START",
+            "desc_en": "Start",
+            "desc_zh": "开始",
+            "percent": 0
+        })
         if os.environ.get("CARLA_SERVER_IP") == None:
             os.environ["CARLA_SERVER_IP"] = "127.0.0.1"
         if os.environ.get("ROS_BRIDGE_IP") == None:
@@ -75,8 +82,17 @@ class Engine(threading.Thread):
             self.carla_adapter = ScenicCarlaAdapter(
                 os.environ.get("CARLA_SERVER_IP"))
 
+
+
         # 实例化carla_adapter后，实例化criteria_manager
         self.criteria_manager = CriteriaManager(self.carla_adapter, interval=1)
+
+        self.callback(cmd="STAGE", msg={
+            "code": "INIT_RT",
+            "desc_en": "Initializing runtime",
+            "desc_zh": "初始化运行环境",
+            "percent": 10
+        })
 
         # 前端指令切换地图
         if self.is_load_map:
@@ -90,6 +106,23 @@ class Engine(threading.Thread):
         print("engine start test")
         self.start_test()
 
+        self.callback(cmd="STAGE", msg={
+            "code": "INIT_SIM",
+            "desc_en": "Initializing simulator",
+            "desc_zh": "初始化模拟器",
+            "percent": 20
+        })
+
+        # start video server
+        video_server.run()
+
+        self.callback(cmd="STAGE", msg={
+            "code": "INIT_VS",
+            "desc_en": "Initializing video server",
+            "desc_zh": "初始化视频服务器",
+            "percent": 30
+        })
+
         self.stop_event.wait()
         print("caught stop event")
         self.stop()
@@ -100,8 +133,12 @@ class Engine(threading.Thread):
 
     def start_test(self):
 
-        # start video server
-        video_server.run()
+        self.callback(cmd="STAGE", msg={
+            "code": "PARSE",
+            "desc_en": "Parsing script",
+            "desc_zh": "解析脚本",
+            "percent": 60
+        })
 
         if self.language == "scenest":
             try:
@@ -149,6 +186,12 @@ class Engine(threading.Thread):
                 adapted_ego.set_start_position(ego_start_coordinates)
                 adapted_ego.set_random_target()
                 print("ego start:{}".format(adapted_ego.start_transform))
+                self.callback(cmd="STAGE", msg={
+                    "code": "INIT_EGO",
+                    "desc_en": "Initializing Ego",
+                    "desc_zh": "初始化Ego车辆",
+                    "percent": 70
+                })
                 self.autoware_adapter.init()
                 self.autoware_adapter.run(
                     adapted_ego, self.on_ego_state_change, self.on_trace_generated)
@@ -177,6 +220,12 @@ class Engine(threading.Thread):
                 world=self.carla_adapter.world, name=ego.get_name())
             scenest_carla_adapter.set_position(ego, adapted_ego)
             # Run autoware adapter
+            self.callback(cmd="STAGE", msg={
+                "code": "INIT_EGO",
+                "desc_en": "Initializing Ego",
+                "desc_zh": "初始化Ego车辆",
+                "percent": 70
+            })
             self.autoware_adapter.init()
             self.autoware_adapter.run(
                 adapted_ego, self.on_ego_state_change, self.on_trace_generated)
@@ -210,6 +259,7 @@ class Engine(threading.Thread):
 
         # stop video server
         video_server.stop()
+        print("********Outer: video stopped")
 
         # 发送状态信息给前端页面
         self.callback(cmd="STOP", msg="Ego reached target")
@@ -240,6 +290,12 @@ class Engine(threading.Thread):
             print("Ego launched")
             # 发送状态信息给前端页面
             self.callback(cmd="READY", msg="Ego launched")
+            self.callback(cmd="STAGE", msg={
+                "code": "READY",
+                "desc_en": "Ego ready",
+                "desc_zh": "Ego车辆就绪",
+                "percent": 80
+            })
 
             # attach front camera
             self.carla_adapter.attach_live_camera(
@@ -258,6 +314,12 @@ class Engine(threading.Thread):
 
             # Send target
             self.autoware_adapter.send_target()
+            self.callback(cmd="STAGE", msg={
+                "code": "PLAN",
+                "desc_en": "Ego planning",
+                "desc_zh": "Ego车辆规划路径",
+                "percent": 90
+            })
             print("[Wait]Checking target...")
         elif state == "DRIVING":
             print("Ego start to drive")
@@ -266,6 +328,12 @@ class Engine(threading.Thread):
             video_server.clear_all_queues()
             # 发送状态信息给前端页面
             self.callback(cmd="DRIVING", msg="Ego start to drive")
+            self.callback(cmd="STAGE", msg={
+                "code": "DRIVE",
+                "desc_en": "Start to drive",
+                "desc_zh": "开始驾驶",
+                "percent": 100
+            })
             # check time limit
             if self.time > 0:
                 print("Time limit:{}s".format(self.time))
