@@ -75,7 +75,7 @@ class Engine(threading.Thread):
         self.autoware_adapter = autoware_adapter.AutowareAdapter(
             os.environ.get("ROS_BRIDGE_IP"))
 
-        if self.language == "scenest":
+        if self.language == "scenest" or self.language == "cartel":
             self.carla_adapter = ScenestCarlaAdapter(
                 os.environ.get("CARLA_SERVER_IP"))
         if self.language == "scenic":
@@ -104,24 +104,13 @@ class Engine(threading.Thread):
         print("engine thread start, thread id = " + str(threading.get_ident()))
         self.start_event.wait()
         print("engine start test")
-        self.start_test()
-
         self.callback(cmd="STAGE", msg={
             "code": "INIT_SIM",
             "desc_en": "Initializing simulator",
             "desc_zh": "初始化模拟器",
             "percent": 20
         })
-
-        # start video server
-        video_server.run()
-
-        self.callback(cmd="STAGE", msg={
-            "code": "INIT_VS",
-            "desc_en": "Initializing video server",
-            "desc_zh": "初始化视频服务器",
-            "percent": 30
-        })
+        self.start_test()
 
         self.stop_event.wait()
         print("caught stop event")
@@ -133,6 +122,16 @@ class Engine(threading.Thread):
 
     def start_test(self):
 
+        # start video server
+        video_server.run()
+
+        self.callback(cmd="STAGE", msg={
+            "code": "INIT_VS",
+            "desc_en": "Initializing video server",
+            "desc_zh": "初始化视频服务器",
+            "percent": 30
+        })
+
         self.callback(cmd="STAGE", msg={
             "code": "PARSE",
             "desc_en": "Parsing script",
@@ -140,7 +139,7 @@ class Engine(threading.Thread):
             "percent": 60
         })
 
-        if self.language == "scenest":
+        if self.language == "scenest"  or self.language == "cartel":
             try:
                 # 前端指令提交代码（直接提交代码没有预加载地图/已经预加载地图）
                 self.ast = driver.Parse(self.code_file)
@@ -264,7 +263,7 @@ class Engine(threading.Thread):
         # 发送状态信息给前端页面
         self.callback(cmd="STOP", msg="Ego reached target")
 
-        if self.language == "scenest":
+        if self.language == "scenest"  or self.language == "cartel":
             trace_list = self.ast.get_traces()
             self.check_assertion(trace_list)
             # 发送assert信息给前端页面
@@ -302,14 +301,14 @@ class Engine(threading.Thread):
                 self.autoware_adapter.ego_actor,
                 glv.get("queue_front"),
                 transform={
-                    "x": 0.5,
+                    "x": -4.5,
                     "y": 0,
-                    "z": 2,
+                    "z": 2.8,
                     "roll": 0,
-                    "pitch": -5,
+                    "pitch": -20,
                     "yaw": 0
                 },
-                fov = 100
+                fov = 90
             )
 
             # Send target
