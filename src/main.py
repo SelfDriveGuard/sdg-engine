@@ -147,7 +147,7 @@ async def main(websocket, path):
                 engine_websocket.set_engine(engine)
                 engine_websocket.set_engine_running(True)
                 # 发送状态信息给前端页面 isRunning/notRunning
-                await engine_websocket.send_msg()
+                # await engine_websocket.send_msg()
                 signal.signal(signal.SIGINT, _signal_handler)
                 print("engine started")
             elif cmd == "stop":
@@ -161,7 +161,7 @@ async def main(websocket, path):
                 engine_websocket.set_engine_running(False)
                 os.remove(input_file)
                 # 发送状态信息给前端页面 isRunning/notRunning
-                await engine_websocket.send_msg()
+                # await engine_websocket.send_msg()
             elif cmd == "query":
                 # 发送状态信息给前端页面 isRunning/notRunning
                 await engine_websocket.send_msg()

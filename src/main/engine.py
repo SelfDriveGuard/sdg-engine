@@ -260,9 +260,6 @@ class Engine(threading.Thread):
         video_server.stop()
         print("********Outer: video stopped")
 
-        # 发送状态信息给前端页面
-        self.callback(cmd="STOP", msg="Ego reached target")
-
         if self.language == "scenest"  or self.language == "cartel":
             trace_list = self.ast.get_traces()
             self.check_assertion(trace_list)
@@ -276,6 +273,8 @@ class Engine(threading.Thread):
         self.criteria_manager.stop()
         self.callback(cmd="CRITERIA", msg=global_statistics)
 
+        # 发送状态信息给前端页面
+        self.callback(cmd="STOP", msg="Test finished")
 
 
     # TODO: make message constant
