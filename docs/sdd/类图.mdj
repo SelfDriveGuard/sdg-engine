@@ -331,7 +331,7 @@
 											"top": 262,
 											"width": 439,
 											"height": 13,
-											"text": "scenest_parser"
+											"text": "cartel_parser"
 										},
 										{
 											"_type": "LabelView",
@@ -455,7 +455,7 @@
 											"top": 448,
 											"width": 132.52188110351562,
 											"height": 13,
-											"text": "(from scenest_parser)"
+											"text": "(from cartel_parser)"
 										},
 										{
 											"_type": "LabelView",
@@ -672,7 +672,7 @@
 											"top": 224,
 											"width": 132.52188110351562,
 											"height": 13,
-											"text": "(from scenest_parser)"
+											"text": "(from cartel_parser)"
 										},
 										{
 											"_type": "LabelView",
@@ -1149,7 +1149,7 @@
 											"top": 678,
 											"width": 229.0078125,
 											"height": 13,
-											"text": "+carla_adapter: ScenestCarlaAdapter",
+											"text": "+carla_adapter: CartelCarlaAdapter",
 											"horizontalAlignment": 0
 										},
 										{
@@ -1933,7 +1933,7 @@
 											"top": 951,
 											"width": 175.90281677246094,
 											"height": 13,
-											"text": "ScenestCarlaAdapter"
+											"text": "CartelCarlaAdapter"
 										},
 										{
 											"_type": "LabelView",
@@ -6823,7 +6823,7 @@
 					"_parent": {
 						"$ref": "AAAAAAFF+qBWK6M3Z8Y="
 					},
-					"name": "scenest_parser",
+					"name": "cartel_parser",
 					"ownedElements": [
 						{
 							"_type": "UMLClass",
@@ -7459,7 +7459,7 @@
 					"_parent": {
 						"$ref": "AAAAAAFF+qBWK6M3Z8Y="
 					},
-					"name": "ScenestCarlaAdapter",
+					"name": "CartelCarlaAdapter",
 					"ownedElements": [
 						{
 							"_type": "UMLAssociation",
@@ -8494,7 +8494,8 @@
 							"_parent": {
 								"$ref": "AAAAAAF4EOdHT6mr09Q="
 							},
-							"name": "actor_list"
+							"name": "actor_list",
+							"type": ""
 						}
 					],
 					"operations": [
@@ -8545,7 +8546,8 @@
 							"_parent": {
 								"$ref": "AAAAAAF4EOnN/LMX49I="
 							},
-							"name": "scene"
+							"name": "scene",
+							"type": ""
 						},
 						{
 							"_type": "UMLAttribute",
@@ -8553,7 +8555,8 @@
 							"_parent": {
 								"$ref": "AAAAAAF4EOnN/LMX49I="
 							},
-							"name": "scenic_simulator"
+							"name": "scenic_simulator",
+							"type": ""
 						}
 					],
 					"operations": [
