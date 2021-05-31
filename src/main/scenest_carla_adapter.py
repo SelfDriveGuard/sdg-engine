@@ -16,6 +16,7 @@ class ScenestCarlaAdapter(CarlaAdapter):
         self.npc_thread = None
         self.id_name_map = {}
         self.traffic_manager = self.client.get_trafficmanager(9988)
+        self.traffic_manager.set_hybrid_physics_mode(True)
 
     def init(self, scenario):
         self.scenario = scenario
