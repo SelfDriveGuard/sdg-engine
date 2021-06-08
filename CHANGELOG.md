@@ -1,3 +1,9 @@
+## SelfDriveGuard 1.2
+
+  * increase video stream fps
+  * add progress bar while loading
+  * fix environment setting failed
+
 ## SelfDriveGuard 1.1
 
   * Support scenic description language
