@@ -29,7 +29,7 @@ RUN pip install --upgrade "requests==2.25.1" && \
   pip install --upgrade "roslibpy==1.1.0" && \
   pip install --upgrade "metric-temporal-logic==0.2.2" && \
   pip install --upgrade "scenic==2.0.0" && \
-  pip install --upgrade "tabulate==0.7.5"
+  pip install --upgrade "tabulate==0.7.5" && \
   pip install Shapely
   
 RUN apt update && \
