@@ -11,7 +11,7 @@ trap cleanup KILL
 cd /home/sdg/sdg-engine
 
 echo "Launching..."
-python src/main.py &
+/usr/bin/python3.8 src/main.py &
 sleep 5
 echo "Launched."
 sleep infinity
