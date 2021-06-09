@@ -9,17 +9,9 @@ ENV DEBIAN_FRONTEND=noninteractive
 RUN apt-get update && \ 
   apt-get install -y gcc make build-essential libssl-dev zlib1g-dev libbz2-dev libreadline-dev libsqlite3-dev wget curl llvm libncurses5-dev libncursesw5-dev xz-utils tk-dev libffi-dev liblzma-dev tcptraceroute bc net-tools
 
-RUN apt-get install -y software-properties-common && \
-  apt-get install -y software-properties-common && \
-  add-apt-repository ppa:deadsnakes/ppa && \
-  apt-get install -y python3.8
-
-RUN mv /usr/bin/python3 /usr/bin/python3.bak && \
-  ln -s /usr/bin/python3.8 /usr/bin/python3 && \
-  ln -s /usr/bin/python3.8 /usr/bin/python
-
-RUN apt-get install -y python3-pip && \
-  ln -s /usr/bin/pip3 /usr/bin/pip
+RUN apt update && \
+  apt install -y python3-pip && \
+  pip --version
 
 RUN pip install --upgrade "requests==2.25.1" && \
   pip install --upgrade "websockets==8.1" && \
