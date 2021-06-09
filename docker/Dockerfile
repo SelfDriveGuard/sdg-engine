@@ -1,3 +1,4 @@
+# The version of Python is python3.8
 FROM ubuntu:20.04
 
 RUN useradd -ms /bin/bash sdg
@@ -23,7 +24,7 @@ RUN pip install --upgrade "requests==2.25.1" && \
   pip install --upgrade "scenic==2.0.0" && \
   pip install --upgrade "tabulate==0.7.5" && \
   pip install Shapely
-  
+
 RUN apt update && \
   apt install -y git libxerces-c3.2 libjpeg8 libtiff5 iputils-ping
 
@@ -31,7 +32,7 @@ RUN apt update && \
 RUN cd /home/sdg/ && \
   git clone git://github.com/SelfDriveGuard/sdg-engine.git && \
   cd /home/sdg/sdg-engine/ && \
-  python setup.py
+  /usr/bin/python3.8 setup.py 
 
 COPY run.sh /home/sdg/
 
